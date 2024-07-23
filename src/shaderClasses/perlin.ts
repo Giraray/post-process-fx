@@ -5,8 +5,26 @@ interface Size {
     height: number,
 }
 
+/**
+ * User-configurable options.
+ * @param style {@link StyleOptions} with variable computing of the Perlin noise. Default is "natural"
+ * @param gridSize Zoom level. Default is 2
+ * @param intensity Noise multiplication. Default is 1
+ */
+interface PerlinConfig {
+    style?: StyleOptions;
+    gridSize?: number;
+    intensity?: number;
+    animate?: boolean;
+}
+
+type StyleOptions =
+    | 'billowRidge'
+    | 'natural'
+    | 'normalized';
+
 interface PerlinOptions {
-    billowRidge?: boolean;
+    config?: PerlinConfig;
     seed: number;
     size: Size;
     canvasFormat: GPUTextureFormat;
@@ -19,7 +37,9 @@ interface PerlinOptions {
  */
 export class PerlinTexture implements PerlinOptions {
 
-    billowRidge: boolean | undefined;
+    time: number = 0;
+    config?: PerlinConfig;
+    style: string;
     size: Size;
     seed: number;
     readonly canvasFormat: GPUTextureFormat;
@@ -29,11 +49,19 @@ export class PerlinTexture implements PerlinOptions {
     bindGroup: GPUBindGroup;
 
     constructor(options: PerlinOptions) {
-        this.billowRidge = options.billowRidge ? true : false;
+        this.style = options.config.style ? options.config.style : 'natural';
         this.size = options.size;
         this.canvasFormat = options.canvasFormat;
         this.device = options.device;
         this.seed = options.seed;
+        this.config = options.config ? options.config : undefined;
+
+        if(!this.config.animate)
+            this.config.animate = false;
+        if(!this.config.intensity)
+            this.config.intensity = 1;
+        if(!this.config.gridSize)
+            this.config.gridSize = 2;
     }
 
     // create texture
@@ -69,7 +97,28 @@ export class PerlinTexture implements PerlinOptions {
                     buffer: {
                         type: 'uniform',
                     },
-                }
+                },
+                {
+                    binding: 3,
+                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
+                    buffer: {
+                        type: 'uniform',
+                    },
+                },
+                {
+                    binding: 4,
+                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
+                    buffer: {
+                        type: 'uniform',
+                    },
+                },
+                {
+                    binding: 5,
+                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
+                    buffer: {
+                        type: 'uniform',
+                    },
+                },
             ]
         });
 
@@ -87,13 +136,26 @@ export class PerlinTexture implements PerlinOptions {
 
         // BINDINGS
 
-        // billowRidge
-        let billowValue = this.billowRidge ? 1 : 0;
-        const billowBuffer = device.createBuffer({
+        // style options
+        let styleValue: number;
+        switch (this.config.style) {
+            case 'billowRidge':
+                styleValue = 1;
+                break;
+            case 'normalized':
+                styleValue = 2;
+                break;
+            case 'natural':
+            default:
+                styleValue = 3;
+                break;
+        }
+
+        const styleBuffer = device.createBuffer({
             size: 4,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
-        device.queue.writeBuffer(billowBuffer, 0, new Int32Array([billowValue]));
+        device.queue.writeBuffer(styleBuffer, 0, new Int32Array([styleValue]));
 
         // resolution
         const resBuffer = device.createBuffer({
@@ -109,13 +171,34 @@ export class PerlinTexture implements PerlinOptions {
         });
         device.queue.writeBuffer(seedBuffer, 0, new Float32Array([this.seed]));
 
+        // gridSize
+        const gridBuffer = device.createBuffer({
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+        device.queue.writeBuffer(gridBuffer, 0, new Float32Array([this.config.gridSize]));
+
+        // intensity
+        const intensityBuffer = device.createBuffer({
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+        device.queue.writeBuffer(intensityBuffer, 0, new Float32Array([this.config.intensity]));
+
+        // time
+        const timeBuffer = device.createBuffer({
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+        device.queue.writeBuffer(timeBuffer, 0, new Float32Array([this.time]));
+
         this.bindGroup = device.createBindGroup({
             label: 'perlin bindgroup',
             layout: bindGroupLayout,
             entries: [
                 {
                     binding: 0,
-                    resource: {buffer: billowBuffer},
+                    resource: {buffer: styleBuffer},
                 },
                 {
                     binding: 1,
@@ -125,7 +208,27 @@ export class PerlinTexture implements PerlinOptions {
                     binding: 2,
                     resource: {buffer: seedBuffer}
                 },
+                {
+                    binding: 3,
+                    resource: {buffer: gridBuffer}
+                },
+                {
+                    binding: 4,
+                    resource: {buffer: intensityBuffer}
+                },
+                {
+                    binding: 5,
+                    resource: {buffer: timeBuffer}
+                },
             ],
         });
+    }
+
+    public resizeCanvas(canvas: HTMLCanvasElement) {
+        canvas.width = this.size.width;
+        canvas.height = this.size.height;
+
+        canvas.style.width = this.size.width + 'px';
+        canvas.style.height = this.size.height + 'px';
     }
 }

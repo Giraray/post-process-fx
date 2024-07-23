@@ -4,9 +4,12 @@ struct OurVertexShaderOutput {
     @location(1) fragCoord: vec2f,
 };
 
-@group(0) @binding(0) var<uniform> billowRidge: i32;
+@group(0) @binding(0) var<uniform> style: i32;
 @group(0) @binding(1) var<uniform> resolution: vec2<f32>;
 @group(0) @binding(2) var<uniform> seed: f32;
+@group(0) @binding(3) var<uniform> gridSize: f32;
+@group(0) @binding(4) var<uniform> intensity: f32;
+@group(0) @binding(5) var<uniform> time: f32;
 
 @vertex fn vertexMain(
     @builtin(vertex_index) vertexIndex : u32
@@ -40,7 +43,7 @@ fn randomGradient(corner: vec2<f32>) -> vec2<f32> {
         var y = dot(corner, vec2(2.3, 1.3));
         var gradient = vec2(x,y);
         gradient = sin(gradient);
-        gradient *= seed;
+        gradient *= seed + time*0.03;
         gradient = sin(gradient);
         return gradient;
 }
@@ -55,8 +58,7 @@ fn quintic(p: vec2<f32>) -> vec2<f32> {
     var uv = (fsInput.fragCoord - resolution.xy * 0.5) / min(resolution.x, resolution.y);
     uv += vec2(seed*0.13, seed*0.13);
 
-    var grid = 1.5;
-    uv *= grid;
+    uv *= gridSize;
     
     var gridId = floor(uv);
     var gridUv = fract(uv);
@@ -93,9 +95,14 @@ fn quintic(p: vec2<f32>) -> vec2<f32> {
     var b = mix(dotBl, dotBr, gridUv.x);
     var color = mix(t, b, gridUv.y);
 
-    if(billowRidge == 1) {
+    if(style == 1) {
         color = abs(color);
     }
+    else if(style == 2) {
+        color = (color + 0.6) / 2.0;
+    }
+
+    color *= intensity;
 
     return vec4(vec3(color), 1.0);
 }

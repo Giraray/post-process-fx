@@ -25,13 +25,16 @@ context.configure({
 });
 
 const perlinTexture = new PerlinTexture({
-    size: {width: 1085, height: 545,},
+    size: {width: 500, height: 500,},
     canvasFormat,
     device,
-    billowRidge: true,
     seed: Math.random()*10000,
+    config: {
+        style: 'billowRidge',
+    }
 })
 perlinTexture.createTexture();
+perlinTexture.resizeCanvas(canvas);
 
 
 // let's do this. *breaks fingers*
@@ -153,6 +156,7 @@ canvas.height = texture.height
 // });
 
 // CREATE AND DRAW PASS
+let frame = 1
 function render() {
     const encoder = device.createCommandEncoder({
         label: 'render encoder',
@@ -165,6 +169,10 @@ function render() {
             storeOp: 'store',
         }],
     });
+
+    perlinTexture.time += 1;
+    perlinTexture.createTexture();
+
     pass.setPipeline(perlinTexture.pipeline);
     pass.setBindGroup(0, perlinTexture.bindGroup);
     pass.draw(6);
@@ -172,6 +180,10 @@ function render() {
 
     device.queue.submit([encoder.finish()]);
 
-    console.log(context.getCurrentTexture().createView())
+    if(perlinTexture.config.animate == true) {
+        setTimeout(() => {
+            requestAnimationFrame(render);
+        }, 1000 / 20);
+    }
 }
 render();
