@@ -126,6 +126,23 @@ canvas {
     margin-inline: 4px;
 }
 
+.slot {
+    transition: transform 0.1s;
+}
+
+.slot:hover {
+    transform: scale(102%);
+}
+
+.slot > img {
+    width: 100%;
+    height: 100%;
+}
+
+.slot > img:hover {
+    filter: brightness(0.8);
+}
+
 .btn-div {
     height: 10%;
     display: flex;

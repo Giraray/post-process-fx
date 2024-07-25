@@ -231,4 +231,8 @@ export class PerlinTexture implements PerlinOptions {
         canvas.style.width = this.size.width + 'px';
         canvas.style.height = this.size.height + 'px';
     }
+
+    public updateTime(delta: number) {
+        this.time += delta;
+    }
 }

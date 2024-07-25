@@ -1,8 +1,7 @@
 import imgPath from './assets/sukunaiPadKid.jpg';
-import shaderCode from './assets/shaders/newShader.wgsl?raw';
-import perlinCode from './assets/shaders/perlinNoise.wgsl?raw';
 
 import {PerlinTexture} from './shaderClasses/perlin.ts'
+import {ImgTexture} from './shaderClasses/img.ts'
 
 if(!navigator.gpu) {
     throw new Error('WebGPU not supported on this browser');
@@ -24,18 +23,21 @@ context.configure({
     format: canvasFormat,
 });
 
+
+
+
 const perlinTexture = new PerlinTexture({
     size: {width: 500, height: 500,},
     canvasFormat,
     device,
-    seed: Math.random()*10000,
+    seed: Math.random() * 100000,
     config: {
-        style: 'billowRidge',
+        style: 'natural',
+        intensity: 1.0,
+        gridSize: 3.0,
+        animate: true,
     }
 })
-perlinTexture.createTexture();
-perlinTexture.resizeCanvas(canvas);
-
 
 // let's do this. *breaks fingers*
 
@@ -45,123 +47,30 @@ async function loadTexture(url) {
     const blob = await res.blob();
     const source = await createImageBitmap(blob, {colorSpaceConversion: 'none'});
 
-    const texture = device.createTexture({
-        label: 'imgTexture',
-        format: 'rgba8unorm',
-        size: [source.width, source.height],
-        usage: 
-            GPUTextureUsage.COPY_DST |
-            GPUTextureUsage.TEXTURE_BINDING |
-            GPUTextureUsage.RENDER_ATTACHMENT,
-    });
-    device.queue.copyExternalImageToTexture(
-        {source: source, flipY: true},
-        {texture: texture},
-        {width: source.width, height: source.height},
-    );
-    return texture;
-}
-const texture = await loadTexture(imgPath);
-console.log(texture.width, texture.height)
-
-if(texture.width > texture.height) {
-    canvas.style.width = texture.width;
-}
-else if(texture.width < texture.height) {
-    canvas.style.height = texture.height;
+    return source;
 }
 
-// canvas.style.width = texture.width + 'px'
-// canvas.style.height = texture.height + 'px'
-canvas.width = texture.width
-canvas.height = texture.height
+const source = await loadTexture(imgPath);
+const texObject = new ImgTexture({
+    size: {width: source.width, height: source.height},
+    canvasFormat,
+    device,
+    source,
+});
+perlinTexture.resizeCanvas(canvas);
 
-// // TODO: abstract shader creation into a reusable function
 
-// // shader module
-// const shaderModule = device.createShaderModule({
-//     label: 'shader module',
-//     code: perlinCode,
-// })
-
-// const bindGroupLayout = device.createBindGroupLayout({
-//     entries: [
-//         {
-//             binding: 0,
-//             visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
-//             buffer: {
-//                 type: 'uniform',
-//             },
-//         },
-//         {
-//             binding: 1,
-//             visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
-//             buffer: {
-//                 type: 'uniform',
-//             },
-//         }
-//     ]
-// })
-
-// // render pipeline
-// const pipeline = device.createRenderPipeline({
-//     label: 'render pipeline',
-//     layout: device.createPipelineLayout({bindGroupLayouts:[bindGroupLayout]}), // jesus christ
-//     vertex: {
-//         module: shaderModule,
-//     },
-//     fragment: {
-//         module: shaderModule,
-//         targets: [{format:canvasFormat}],
-//     },
-// });
-
-// // sampler
-// const sampler = device.createSampler({
-//     magFilter: 'linear',
-//     minFilter: 'linear',
-// });
-
-// // resolution buffer
-// const resolutionArray = new Float32Array([texture.width, texture.height]);
-// const resolutionBuffer = device.createBuffer({
-//     label: 'resolution buffer',
-//     size: resolutionArray.byteLength,
-//     usage:
-//         GPUBufferUsage.UNIFORM |
-//         GPUBufferUsage.COPY_DST,
-// });
-// device.queue.writeBuffer(resolutionBuffer, 0, resolutionArray);
-
-// // bindgroup
-// const billowBuffer = device.createBuffer({
-//     size: 4,
-//     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-// });
-// device.queue.writeBuffer(billowBuffer, 0, new Int32Array([0+perlinTexture.billowRidge]));
-
-// // resolution
-// const resBuffer = device.createBuffer({
-//     size:8,
-//     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-// });
-// device.queue.writeBuffer(resBuffer, 0, new Float32Array([perlinTexture.size.width, perlinTexture.size.height]));
-
-// const bindGroup = device.createBindGroup({
-//     layout: bindGroupLayout,
-//     entries: [
-//         {binding: 0, resource: {buffer: billowBuffer}},
-//         {binding: 1, resource: {buffer: resBuffer}},
-//     ],
-// });
-
+let dataUrl;
 // CREATE AND DRAW PASS
-let frame = 1
-function render() {
-    const encoder = device.createCommandEncoder({
-        label: 'render encoder',
+function render(texture) {
+
+    texture.createTexture();
+
+    // LOAD TEXTURE
+    const texEncoder = device.createCommandEncoder({
+        label: 'texture encoder',
     });
-    const pass = encoder.beginRenderPass({
+    const pass = texEncoder.beginRenderPass({
         colorAttachments: [{
             view: context.getCurrentTexture().createView(),
             clearValue: [0, 0, 0, 1],
@@ -170,20 +79,29 @@ function render() {
         }],
     });
 
-    perlinTexture.time += 1;
-    perlinTexture.createTexture();
-
-    pass.setPipeline(perlinTexture.pipeline);
-    pass.setBindGroup(0, perlinTexture.bindGroup);
+    pass.setPipeline(texture.pipeline);
+    pass.setBindGroup(0, texture.bindGroup);
     pass.draw(6);
     pass.end();
 
-    device.queue.submit([encoder.finish()]);
+    device.queue.submit([texEncoder.finish()]);
 
-    if(perlinTexture.config.animate == true) {
+    dataUrl = canvas.toDataURL('image/png'); // store data for save
+
+
+    if(Object.hasOwn(texture, 'config') && texture.config.animate == true) {
         setTimeout(() => {
-            requestAnimationFrame(render);
+            texture.updateTime(1);
+            requestAnimationFrame(function() { render(texture) });
         }, 1000 / 20);
     }
 }
-render();
+render(perlinTexture);
+
+
+// SAVE IMAGE
+const downloadBtn = document.getElementById('download');
+downloadBtn.onclick = function() {
+    console.log(dataUrl)
+    downloadBtn.href = dataUrl;
+}
