@@ -30,6 +30,7 @@ header {
 
 .main-block {
     width: 75vw;
+    min-width:min-content;
     margin: 10px;
     height: 80vh;
 
@@ -41,10 +42,14 @@ header {
     margin-inline: 5px;
 }
 
+/* MAIN DISPLAY */
 .img-disp {
     position: relative;
-    width: 70%;
+    width: 100%;
     height: 100%;
+
+    min-width: fit-content;
+    min-height: fit-content;
 
     background-color: #000;
     display: flex;
@@ -53,26 +58,72 @@ header {
 }
 
 canvas {
-    max-width: 100%;
-    max-height: 100%;
-
     width: auto;
     height: auto;
+
+    background-color: #111;
 }
 
-.config {
-    position: absolute;
-    top: 10px;
-    right: 10px;
+/* CONFIG! */
+.config-panel {
+    width: 25%;
+    min-width: 150px;
+    height: 100%;
 
-    height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.config-panel > div {
+    height: 49%;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    box-sizing: border-box;
+    padding: 5px;
+}
+
+.config-title {
+    height: 12%;
     min-height: fit-content;
-    width: 200px;
 
-    background-color: #222;
+    display: flex;
+    align-items: center;
 }
 
-.side-panel {
+.config-title > h2 {
+    font-family: monospace;
+    font-size: 1.5rem;
+    color: #ddd;
+}
+
+.options {
+    height: 86%;
+    overflow-y: auto;
+}
+
+.option-container {
+    min-height: 25px;
+    max-height: fit-content;
+
+    margin-bottom: 5px;
+
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    color: #ddd;
+}
+
+/* number input */
+.option-container_input {
+    display: flex;
+}
+.option-container > input[type="number"] {
+}
+
+/* ITEM PANEL */
+.item-panel {
     width: 30%;
     height: 100%;
 
@@ -82,10 +133,6 @@ canvas {
 
 }
 
-/* .side-panel div {
-    margin-bottom: 2%;
-} */
-
 .shader-select {
     overflow: auto;
     scrollbar-width: none;
@@ -94,8 +141,8 @@ canvas {
     justify-content: space-evenly;
     align-content:space-evenly;
 
-    min-height: 65%;
-    max-height: 65%;
+    min-height: 60%;
+    max-height: 60%;
 
     box-sizing: border-box;
     padding-block: 5px;
@@ -128,6 +175,7 @@ canvas {
 
 .slot {
     transition: transform 0.1s;
+    cursor: pointer;
 }
 
 .slot:hover {
@@ -137,6 +185,8 @@ canvas {
 .slot > img {
     width: 100%;
     height: 100%;
+
+    transition: filter 0.2s;
 }
 
 .slot > img:hover {
@@ -144,7 +194,7 @@ canvas {
 }
 
 .btn-div {
-    height: 10%;
+    height: 5%;
     display: flex;
     justify-content: space-evenly;
     align-items: center;
@@ -160,4 +210,8 @@ canvas {
     font-size: 0.9rem;
     color: #ddd;
     font-family: monospace;
+}
+
+@media screen and (max-width: 1500px) {
+
 }

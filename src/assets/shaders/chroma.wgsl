@@ -32,8 +32,8 @@ struct OurVertexShaderOutput {
 @group(0) @binding(0) var ourSampler: sampler;
 @group(0) @binding(1) var ourTexture: texture_2d<f32>;
 
-const chromaSpread : f32 = 4.0;
-const chromaIntensity : f32 = 1.0;
+const chromaSpread : f32 = 0.5;
+const chromaIntensity : f32 = 0.6;
 
 @fragment fn fragMain(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
     var color = textureSample(ourTexture, ourSampler, fsInput.fragUV);

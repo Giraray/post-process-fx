@@ -87,10 +87,18 @@ export class ImgTexture {
     }
 
     public resizeCanvas(canvas: HTMLCanvasElement) {
-        canvas.width = this.size.width;
-        canvas.height = this.size.height;
+        const maxW = parseInt(canvas.style.maxWidth.slice(0,-2)); // bruh
+        const maxH = parseInt(canvas.style.maxHeight.slice(0,-2));
+
+        if(this.size.width > maxW)
+            this.size.width = maxW;
+        if(this.size.height > maxH)
+            this.size.height = maxH;
 
         canvas.style.width = this.size.width + 'px';
         canvas.style.height = this.size.height + 'px';
+
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
     }
 }

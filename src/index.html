@@ -13,11 +13,68 @@
         </div>
     </header>
     <div class="main-block border444">
-        <div class="img-disp border444 main-block_panel">
-            <canvas></canvas>
-            <div class="config border444"></div>
+        <div id="imgDisp" class="img-disp border444 main-block_panel">
+            <canvas id="canvas"></canvas>
         </div>
-        <div class="side-panel main-block_panel">
+
+        <div class="config-panel main-block_panel">
+
+            <div class="shader-config border444">
+                <div class="config-title">
+                    <h2 class="the-config-title">Shader options</h2>
+                </div>
+                <div class="options">
+
+                    <!-- placeholder -->
+                    <div class="option-container option-container_input border444"></div>
+                    <div class="option-container option-container_range border444"></div>
+                    <div class="option-container option-container_enum border444"></div>
+                    <div class="option-container option-container_boolean border444"></div>
+
+                </div>
+            </div>
+
+            <div class="texture-config border444">
+                <div class="config-title">
+                    <h2 class="the-config-title">Texture options</h2>
+                </div>
+                <div class="options">
+
+                    <!-- number input -->
+                    <div class="option-container option-container_input border444">
+                        <span class="input-desc">Intensity:</span>
+                        <input type="number">
+                    </div>
+
+                    <!-- range input -->
+                    <div class="option-container option-container_range border444">
+                        <span class="input-desc">Grid size:</span>
+                        <input type="range">
+                        <span class="range-value">123</span>
+                    </div>
+
+                    <!-- enum input -->
+                    <div class="option-container option-container_enum border444">
+                        <span class="input-desc">Style</span>
+                        <select class="option-select">
+                            <option value="natural">Natural</option>
+                            <option value="natural">Billow ridge</option>
+                            <option value="natural">Normalized</option>
+                        </select>
+                    </div>
+
+                    <!-- boolean input -->
+                    <div class="option-container option-container_boolean border444">
+                        <span class="input-desc">Animate</span>
+                        <input type="checkbox">
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="item-panel main-block_panel">
 
             <div class="shader-select border444">
                 <div class="shader-select_item border444 slot"></div>
@@ -31,10 +88,14 @@
             </div>
 
             <div class="textures border444">
-                <div class="textures_tex border444 slot"></div>
-                <div id="perlinTexture" class="textures_tex border444 slot">
-                    <img src="./assets/thumbnails/perlinTN.png" alt="Perlin noise">
+                <div class="textures_tex border444 slot" title="Cat texture">
+                    <img src="./assets/thumbnails/eliasTN.png" alt="Elías texture">
                 </div>
+
+                <div id="perlinTexture" class="textures_tex border444 slot" title="Perlin noise texture">
+                    <img src="./assets/thumbnails/perlinTN.png" alt="Perlin noise texture">
+                </div>
+
                 <div class="textures_tex border444 slot"></div>
                 <div class="textures_tex border444 slot"></div>
                 <div class="textures_tex border444 slot"></div>
