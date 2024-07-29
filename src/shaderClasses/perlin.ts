@@ -1,6 +1,7 @@
 import perlinCode from '../assets/shaders/perlinNoise.wgsl?raw';
 import {ImgTextureUserConfig} from '../configObjects'
 import { imgTextureConfig } from '../createConfig';
+import ShaderObject from './shaderObject'
 
 interface Size {
     width: number,
@@ -31,6 +32,7 @@ interface PerlinOptions {
     size: Size;
     canvasFormat: GPUTextureFormat;
     device: GPUDevice;
+    context: GPUCanvasContext;
 }
 
 /**
@@ -38,19 +40,19 @@ interface PerlinOptions {
  * a perlin noise texture.
  */
 export class PerlinTexture implements PerlinOptions {
-
-    // TODO: create an abstract TextureObject class to localize renderToCanvas() to every texture, in 
-    //       order to make rendering again based on input easier
-
     time: number = 0;
     config?: PerlinConfig;
     size: Size;
     seed: number;
+    context: GPUCanvasContext;
     readonly canvasFormat: GPUTextureFormat;
     readonly device: GPUDevice;
 
     pipeline: GPURenderPipeline;
     bindGroup: GPUBindGroup;
+
+    shaders: Array<ShaderObject>;
+    animateState: boolean;
 
     constructor(options: PerlinOptions) {
         this.size = options.size;
@@ -58,6 +60,9 @@ export class PerlinTexture implements PerlinOptions {
         this.device = options.device;
         this.seed = options.seed;
         this.config = options.config ? options.config : undefined;
+        this.context = options.context;
+        this.shaders = new Array<ShaderObject>;
+        this.animateState = false;
 
         if(!this.config.animate)
             this.config.animate = false;
@@ -71,6 +76,7 @@ export class PerlinTexture implements PerlinOptions {
 
         // EVENT LISTENERS
         const config = this.config;
+        const self = this;
         const intensityElm = <HTMLInputElement>document.getElementById('intensity');
         const styleElm = <HTMLSelectElement>document.getElementById('style');
         const gridSizeElm = <HTMLInputElement>document.getElementById('gridSize');
@@ -82,12 +88,16 @@ export class PerlinTexture implements PerlinOptions {
             if(isNaN(value))
                 value = 0;
             config.intensity = value;
+
+            self.renderToCanvas();
         })
 
         // style
         styleElm.addEventListener('change', function(event) {
             let value = (event.target as HTMLInputElement).value;
             config.style = value as StyleOptions;
+
+            self.renderToCanvas();
         })
 
         // gridSize
@@ -96,12 +106,16 @@ export class PerlinTexture implements PerlinOptions {
             if(isNaN(value))
                 value = 0;
             config.gridSize = value;
+
+            self.renderToCanvas();
         })
 
         // animate
         animateElm.addEventListener('change', function(event) {
             let value = (event.target as HTMLInputElement).checked === true ? true : false;
             config.animate = value;
+
+            self.renderToCanvas();
         })
     }
 
@@ -192,6 +206,7 @@ export class PerlinTexture implements PerlinOptions {
                 break;
         }
 
+        // style
         const styleBuffer = device.createBuffer({
             size: 4,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
@@ -275,5 +290,99 @@ export class PerlinTexture implements PerlinOptions {
 
     public updateTime(delta: number) {
         this.time += delta;
+    }
+
+    /**
+     * Adds a `ShaderObject` to the `shaders` array.
+     * @param shader The ShaderObject to be added
+     */
+    public addShader(shader: ShaderObject) {
+        this.shaders.push(shader);
+    }
+
+    /**
+     * Replaces the `shaders` array with a new array consisting of every item from the array that does not match 
+     * the specified shader.
+     * @param shader The ShaderObject to be removed
+     */
+    public removeShader(shader: ShaderObject) {
+        const newArray = new Array<ShaderObject>;
+        for(let i = 0; i < this.shaders.length; i++) {
+            if(this.shaders[i] !== shader) {
+                newArray.push(this.shaders[i]);
+            }
+        }
+        this.shaders = newArray;
+    }
+
+    public renderToCanvas() {
+
+        // render texture
+        this.createTexture();
+        const renderTargetA = this.device.createTexture({
+            label: 'texA placeholder',
+            format: this.canvasFormat,
+            size: [this.size.width, this.size.height],
+            usage: 
+                GPUTextureUsage.TEXTURE_BINDING |
+                GPUTextureUsage.RENDER_ATTACHMENT |
+                GPUTextureUsage.COPY_SRC
+        });
+
+        const textureEncoder = this.device.createCommandEncoder({
+            label: 'texEncoder',
+        });
+        const pass = textureEncoder.beginRenderPass({
+            colorAttachments: [{
+                view: renderTargetA.createView(),
+                clearValue: [0, 0, 0, 1],
+                loadOp: 'clear',
+                storeOp: 'store',
+            }],
+        });
+        pass.setPipeline(this.pipeline);
+        pass.setBindGroup(0, this.bindGroup);
+        pass.draw(6);
+        pass.end();
+
+        this.device.queue.submit([textureEncoder.finish()]);
+
+        // render shader
+        const theShader = this.shaders[0];
+    
+        const shaderEncoder = this.device.createCommandEncoder({
+            label: 'shader encoder',
+        });
+        const bindGroup = this.device.createBindGroup({
+            layout: theShader.pipeline.getBindGroupLayout(0),
+            entries: [
+                {binding: 0, resource: this.device.createSampler()},
+                {binding: 1, resource: renderTargetA.createView()},
+            ],
+        });
+
+        const shaderPass = shaderEncoder.beginRenderPass({
+            colorAttachments: [{
+                view: this.context.getCurrentTexture().createView(),
+                clearValue: [0,0,0,1],
+                loadOp: 'clear',
+                storeOp: 'store',
+            }],
+        });
+        
+        shaderPass.setPipeline(theShader.pipeline);
+        shaderPass.setBindGroup(0, bindGroup);
+        shaderPass.draw(6);
+        shaderPass.end();
+        
+        this.device.queue.submit([shaderEncoder.finish()]);
+
+        if(this.config.animate === true) {
+            setTimeout(() => {
+                this.time += 1;
+                requestAnimationFrame(this.renderToCanvas.bind(this));
+            }, 1000 / 30);
+        }
+
     }
 }

@@ -1,10 +1,15 @@
+// images
 import imgPath from './assets/sukunaiPadKid.jpg';
 import defaultImg from './assets/eliasoutsidewhoa.jpg';
 
+// textures
 import {PerlinTexture} from './shaderClasses/perlin.ts';
 import {ImgTexture} from './shaderClasses/img.ts';
 
-import erhifhe from './assets/shaders/chroma.wgsl?raw';
+// shaders
+import CRTShader from './shaderClasses/crtShader.ts'
+
+import erhifhe from './assets/shaders/crt.wgsl?raw';
 
 import { ImgTextureUserConfig } from './configObjects.ts';
 
@@ -51,6 +56,7 @@ const perlinTexture = new PerlinTexture({
     canvasFormat,
     device,
     seed: Math.random() * 100000,
+    context,
     config: {
         style: 'natural',
         intensity: 1.0,
@@ -77,7 +83,7 @@ const imgTexture = new ImgTexture({
     device,
     source,
 });
-// perlinTexture.resizeCanvas(canvas);
+perlinTexture.resizeCanvas(canvas);
 
 // testing!!
 let dataUrl;
@@ -93,7 +99,6 @@ function renderToCanvas(texture, shader) {
             GPUTextureUsage.COPY_SRC
     });
 
-    texture.resizeCanvas(canvas);
     const texEncoder = device.createCommandEncoder({
         label: 'texEncoder',
     });
@@ -153,7 +158,12 @@ function renderToCanvas(texture, shader) {
     }
 }
 
-renderToCanvas(perlinTexture);
+// renderToCanvas(perlinTexture);
+
+const crtFilter = new CRTShader(device, canvasFormat);
+perlinTexture.addShader(crtFilter);
+
+perlinTexture.renderToCanvas();
 
 
 // SAVE IMAGE
