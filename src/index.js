@@ -6,6 +6,8 @@ import {ImgTexture} from './shaderClasses/img.ts';
 
 import erhifhe from './assets/shaders/chroma.wgsl?raw';
 
+import { ImgTextureUserConfig } from './configObjects.ts';
+
 if(!navigator.gpu) {
     throw new Error('WebGPU not supported on this browser');
 }
@@ -14,9 +16,7 @@ if(!adapter) {
     throw new Error('No appropriate GPUAdapter found');
 }
 
-
 const device = await adapter.requestDevice();
-
 const canvas = document.querySelector('canvas');
 const context = canvas.getContext('webgpu');
 
@@ -43,9 +43,11 @@ const chPipeline = device.createRenderPipeline({
 const sampler = device.createSampler();
 // REMOVE!!!!!!
 
+const w = document.getElementById('imgDisp').clientWidth;
+const h = document.getElementById('imgDisp').clientHeight;
 
 const perlinTexture = new PerlinTexture({
-    size: {width: 500, height: 500,},
+    size: {width: w, height: h,},
     canvasFormat,
     device,
     seed: Math.random() * 100000,
@@ -53,7 +55,7 @@ const perlinTexture = new PerlinTexture({
         style: 'natural',
         intensity: 1.0,
         gridSize: 3.0,
-        animate: true,
+        animate: false,
     }
 });
 
@@ -151,7 +153,7 @@ function renderToCanvas(texture, shader) {
     }
 }
 
-// renderToCanvas(imgTexture);
+renderToCanvas(perlinTexture);
 
 
 // SAVE IMAGE
@@ -160,3 +162,10 @@ downloadBtn.onclick = function() {
     console.log(dataUrl)
     downloadBtn.href = dataUrl;
 }
+
+function selectTexture() {
+    const textureOptionsDiv = document.getElementById('textureOptions');
+    // const imgTextureConfig = new ImgTextureUserConfig(textureOptionsDiv);
+}
+
+selectTexture();

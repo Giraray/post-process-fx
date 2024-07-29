@@ -1,4 +1,6 @@
 import perlinCode from '../assets/shaders/perlinNoise.wgsl?raw';
+import {ImgTextureUserConfig} from '../configObjects'
+import { imgTextureConfig } from '../createConfig';
 
 interface Size {
     width: number,
@@ -37,9 +39,11 @@ interface PerlinOptions {
  */
 export class PerlinTexture implements PerlinOptions {
 
+    // TODO: create an abstract TextureObject class to localize renderToCanvas() to every texture, in 
+    //       order to make rendering again based on input easier
+
     time: number = 0;
     config?: PerlinConfig;
-    style: string;
     size: Size;
     seed: number;
     readonly canvasFormat: GPUTextureFormat;
@@ -49,7 +53,6 @@ export class PerlinTexture implements PerlinOptions {
     bindGroup: GPUBindGroup;
 
     constructor(options: PerlinOptions) {
-        this.style = options.config.style ? options.config.style : 'natural';
         this.size = options.size;
         this.canvasFormat = options.canvasFormat;
         this.device = options.device;
@@ -62,6 +65,44 @@ export class PerlinTexture implements PerlinOptions {
             this.config.intensity = 1;
         if(!this.config.gridSize)
             this.config.gridSize = 2;
+
+        // generate user config
+        document.getElementById('textureOptions').innerHTML = imgTextureConfig;
+
+        // EVENT LISTENERS
+        const config = this.config;
+        const intensityElm = <HTMLInputElement>document.getElementById('intensity');
+        const styleElm = <HTMLSelectElement>document.getElementById('style');
+        const gridSizeElm = <HTMLInputElement>document.getElementById('gridSize');
+        const animateElm = <HTMLInputElement>document.getElementById('animate');
+
+        // intensity
+        intensityElm.addEventListener('change', function(event) {
+            let value = parseInt((event.target as HTMLInputElement).value);
+            if(isNaN(value))
+                value = 0;
+            config.intensity = value;
+        })
+
+        // style
+        styleElm.addEventListener('change', function(event) {
+            let value = (event.target as HTMLInputElement).value;
+            config.style = value as StyleOptions;
+        })
+
+        // gridSize
+        gridSizeElm.addEventListener('change', function(event) {
+            let value = parseInt((event.target as HTMLInputElement).value);
+            if(isNaN(value))
+                value = 0;
+            config.gridSize = value;
+        })
+
+        // animate
+        animateElm.addEventListener('change', function(event) {
+            let value = (event.target as HTMLInputElement).checked === true ? true : false;
+            config.animate = value;
+        })
     }
 
     // create texture

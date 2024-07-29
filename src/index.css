@@ -12,6 +12,14 @@ body {
     border-radius: 2px;
 }
 
+.border000 {
+    border: solid 1px #111;
+    border-radius: 2px;
+    background-color: #1d1d1d;
+
+    color: #ddd;
+}
+
 header {
     width: 100vw;
     height: 80px;
@@ -106,9 +114,14 @@ canvas {
 }
 
 .option-container {
+    display: grid;
+    grid-template-columns: 50% 50%;
+
     min-height: 25px;
     max-height: fit-content;
 
+    box-sizing: border-box;
+    padding: 5px;
     margin-bottom: 5px;
 
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
@@ -116,10 +129,40 @@ canvas {
 }
 
 /* number input */
-.option-container_input {
-    display: flex;
-}
 .option-container > input[type="number"] {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* range input */
+.option-container_range_value-container {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+}
+
+input[type="range"] {
+    margin-inline: 5px;
+    padding: 0;
+    width: 80%;
+
+    background: #fff;
+    height: 5px;
+}
+
+.range-value {
+    margin-inline: 5px;
+    padding: 0;
+    width: 40%;
+    min-width: 30px;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 /* ITEM PANEL */
