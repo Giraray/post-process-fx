@@ -102,7 +102,7 @@ fn quintic(p: vec2<f32>) -> vec2<f32> {
         color = (color + 0.6) / 2.0;
     }
 
-    color *= intensity;
+    color = pow(color*intensity, intensity);
 
     return vec4(vec3(color), 1.0);
 }

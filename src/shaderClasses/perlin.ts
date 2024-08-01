@@ -1,5 +1,4 @@
 import perlinCode from '../assets/shaders/perlinNoise.wgsl?raw';
-import {ImgTextureUserConfig} from '../configObjects'
 import { imgTextureConfig } from '../createConfig';
 import ShaderObject from './shaderObject'
 
@@ -52,7 +51,8 @@ export class PerlinTexture implements PerlinOptions {
     bindGroup: GPUBindGroup;
 
     shaders: Array<ShaderObject>;
-    animateState: boolean;
+    timeout: ReturnType<typeof setTimeout>;
+    dataUrl: string;
 
     constructor(options: PerlinOptions) {
         this.size = options.size;
@@ -62,7 +62,6 @@ export class PerlinTexture implements PerlinOptions {
         this.config = options.config ? options.config : undefined;
         this.context = options.context;
         this.shaders = new Array<ShaderObject>;
-        this.animateState = false;
 
         if(!this.config.animate)
             this.config.animate = false;
@@ -84,11 +83,12 @@ export class PerlinTexture implements PerlinOptions {
 
         // intensity
         intensityElm.addEventListener('change', function(event) {
-            let value = parseInt((event.target as HTMLInputElement).value);
+            let value = parseFloat((event.target as HTMLInputElement).value);
             if(isNaN(value))
                 value = 0;
             config.intensity = value;
 
+            clearTimeout(self.timeout);
             self.renderToCanvas();
         })
 
@@ -97,16 +97,18 @@ export class PerlinTexture implements PerlinOptions {
             let value = (event.target as HTMLInputElement).value;
             config.style = value as StyleOptions;
 
+            clearTimeout(self.timeout);
             self.renderToCanvas();
         })
 
         // gridSize
         gridSizeElm.addEventListener('change', function(event) {
-            let value = parseInt((event.target as HTMLInputElement).value);
+            let value = parseFloat((event.target as HTMLInputElement).value);
             if(isNaN(value))
                 value = 0;
             config.gridSize = value;
 
+            clearTimeout(self.timeout);
             self.renderToCanvas();
         })
 
@@ -115,8 +117,16 @@ export class PerlinTexture implements PerlinOptions {
             let value = (event.target as HTMLInputElement).checked === true ? true : false;
             config.animate = value;
 
+            clearTimeout(self.timeout);
             self.renderToCanvas();
         })
+    }
+
+    setTimer() {
+        this.timeout = setTimeout(() => {
+            this.time += 1;
+            requestAnimationFrame(this.renderToCanvas.bind(this));
+        }, 1000 / 30);
     }
 
     // create texture
@@ -347,17 +357,27 @@ export class PerlinTexture implements PerlinOptions {
 
         this.device.queue.submit([textureEncoder.finish()]);
 
-        // render shader
+
+        // RENDER SHADER
         const theShader = this.shaders[0];
     
         const shaderEncoder = this.device.createCommandEncoder({
             label: 'shader encoder',
         });
+
+        // resolution buffer
+        const resBuffer = this.device.createBuffer({
+            size:8,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+        this.device.queue.writeBuffer(resBuffer, 0, new Float32Array([this.size.width, this.size.height]));
+
         const bindGroup = this.device.createBindGroup({
             layout: theShader.pipeline.getBindGroupLayout(0),
             entries: [
                 {binding: 0, resource: this.device.createSampler()},
                 {binding: 1, resource: renderTargetA.createView()},
+                {binding: 2, resource: { buffer: resBuffer }}
             ],
         });
 
@@ -377,12 +397,10 @@ export class PerlinTexture implements PerlinOptions {
         
         this.device.queue.submit([shaderEncoder.finish()]);
 
-        if(this.config.animate === true) {
-            setTimeout(() => {
-                this.time += 1;
-                requestAnimationFrame(this.renderToCanvas.bind(this));
-            }, 1000 / 30);
-        }
+        this.dataUrl = (<HTMLCanvasElement>this.context.canvas).toDataURL('image/png');
 
+        if(this.config.animate === true) {
+            this.setTimer();
+        }
     }
 }

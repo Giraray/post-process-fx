@@ -1,6 +1,7 @@
 struct OurVertexShaderOutput {
     @builtin(position) position: vec4f,
     @location(0) fragUV: vec2f,
+    @location(1) fragCoord: vec2f,
 };
 
 @vertex fn vertexMain(
@@ -25,31 +26,41 @@ struct OurVertexShaderOutput {
     vsOutput.position = vec4f(xy, 0.0, 1.0);
 
     vsOutput.fragUV = (xy + 1) / 2; // convert clip-space (-1 - 1) to UV (0 - 1)
+    vsOutput.fragCoord = vsOutput.fragUV * resolution;
 
     return vsOutput;
 }
 
 @group(0) @binding(0) var ourSampler: sampler;
 @group(0) @binding(1) var ourTexture: texture_2d<f32>;
+@group(0) @binding(2) var<uniform> resolution: vec2<f32>;
 
-const chromaSpread : f32 = 0.5;
-const chromaIntensity : f32 = 0.6;
+const SCAN_BRIGHTNESS = 0.35;
+const MOIRE_OPACITY = 0.9;
+const CRT_OPACITY = 0.3;
+const CRT_SPREAD = 5.0;
+
+// protrudes the UV into a convex
+fn curveUV(orgUV: vec2<f32>) -> vec2<f32> {
+    var uv = orgUV;
+    uv = (uv - 0.5) * 2.0 * 1.02;
+    uv.x *= 1.0 + pow(uv.y * 0.2, 2.0);
+    uv.y *= 1.0 + pow(uv.x * 0.25, 2.0);
+    uv = (uv / 2.0) + 0.5;
+
+    return uv;
+}
 
 @fragment fn fragMain(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
-    var color = textureSample(ourTexture, ourSampler, fsInput.fragUV);
+    var uv = fsInput.fragUV;
+    uv = curveUV(uv);
 
-    var center = vec2(0.5);
+    var distortSpeed = iTime * 1.0;
+    
+    // x = complex sinusoid; multiplication of multiple sine waves
+    float x = sin(0.3*distortSpeed+uv.y*10.0) * sin(0.7*distortSpeed+uv.y*13.0) * sin(0.63*distortSpeed+uv.y*16.0)*0.001;
 
-    var multiplier = chromaSpread / sqrt(pow(center.x, 2.0) + pow(center.y, 2.0));
-
-    var frag = abs(center - fsInput.fragUV);
-    var distanceFromCenter = sqrt(pow(frag.x, 2.0) + pow(frag.y, 2.0));
-
-    var adjustedAmount = 0.02 * chromaIntensity * (distanceFromCenter * multiplier);
-
-    color.r = textureSample(ourTexture, ourSampler, vec2(fsInput.fragUV.x + adjustedAmount, fsInput.fragUV.y)).r;
-    color.g = textureSample(ourTexture, ourSampler, fsInput.fragUV).g;
-    color.b = textureSample(ourTexture, ourSampler, vec2(fsInput.fragUV.x - adjustedAmount, fsInput.fragUV.y)).b;
+    var color = textureSample(ourTexture, ourSampler, uv);
 
     return color;
 }

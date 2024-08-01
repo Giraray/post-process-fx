@@ -169,13 +169,5 @@ perlinTexture.renderToCanvas();
 // SAVE IMAGE
 const downloadBtn = document.getElementById('download');
 downloadBtn.onclick = function() {
-    console.log(dataUrl)
-    downloadBtn.href = dataUrl;
+    downloadBtn.href = perlinTexture.dataUrl;
 }
-
-function selectTexture() {
-    const textureOptionsDiv = document.getElementById('textureOptions');
-    // const imgTextureConfig = new ImgTextureUserConfig(textureOptionsDiv);
-}
-
-selectTexture();
