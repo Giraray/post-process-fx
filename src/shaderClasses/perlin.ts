@@ -1,5 +1,5 @@
 import perlinCode from '../assets/shaders/perlinNoise.wgsl?raw';
-import { imgTextureConfig } from '../createConfig';
+import { perlinTextureConfig } from '../createConfig';
 import ShaderObject from './shaderObject'
 
 interface Size {
@@ -18,6 +18,7 @@ interface PerlinConfig {
     gridSize?: number;
     intensity?: number;
     animate?: boolean;
+    speed?: number;
 }
 
 type StyleOptions =
@@ -54,6 +55,8 @@ export class PerlinTexture implements PerlinOptions {
     timeout: ReturnType<typeof setTimeout>;
     dataUrl: string;
 
+    lastUpdate: number;
+
     constructor(options: PerlinOptions) {
         this.size = options.size;
         this.canvasFormat = options.canvasFormat;
@@ -62,6 +65,7 @@ export class PerlinTexture implements PerlinOptions {
         this.config = options.config ? options.config : undefined;
         this.context = options.context;
         this.shaders = new Array<ShaderObject>;
+        this.lastUpdate = Date.now();
 
         if(!this.config.animate)
             this.config.animate = false;
@@ -69,9 +73,11 @@ export class PerlinTexture implements PerlinOptions {
             this.config.intensity = 1;
         if(!this.config.gridSize)
             this.config.gridSize = 2;
+        if(!this.config.speed)
+            this.config.speed = 1;
 
         // generate user config
-        document.getElementById('textureOptions').innerHTML = imgTextureConfig;
+        document.getElementById('textureOptions').innerHTML = perlinTextureConfig;
 
         // EVENT LISTENERS
         const config = this.config;
@@ -80,6 +86,7 @@ export class PerlinTexture implements PerlinOptions {
         const styleElm = <HTMLSelectElement>document.getElementById('style');
         const gridSizeElm = <HTMLInputElement>document.getElementById('gridSize');
         const animateElm = <HTMLInputElement>document.getElementById('animate');
+        const speedElm = <HTMLInputElement>document.getElementById('speed');
 
         // intensity
         intensityElm.addEventListener('change', function(event) {
@@ -120,13 +127,28 @@ export class PerlinTexture implements PerlinOptions {
             clearTimeout(self.timeout);
             self.renderToCanvas();
         })
+
+        speedElm.addEventListener('change', function(event) {
+            let value = parseFloat((event.target as HTMLInputElement).value);
+            if(isNaN(value))
+                value = 0;
+            config.speed = value;
+
+            clearTimeout(self.timeout);
+            self.renderToCanvas();
+        })
     }
 
     setTimer() {
         this.timeout = setTimeout(() => {
-            this.time += 1;
+
+            const now = Date.now();
+            const delta = this.lastUpdate - now;
+            this.lastUpdate = now;
+            this.time += delta/100;
+
             requestAnimationFrame(this.renderToCanvas.bind(this));
-        }, 1000 / 30);
+        }, 1000 / 60);
     }
 
     // create texture
@@ -179,6 +201,13 @@ export class PerlinTexture implements PerlinOptions {
                 },
                 {
                     binding: 5,
+                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
+                    buffer: {
+                        type: 'uniform',
+                    },
+                },
+                {
+                    binding: 6,
                     visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
                     buffer: {
                         type: 'uniform',
@@ -258,6 +287,13 @@ export class PerlinTexture implements PerlinOptions {
         });
         device.queue.writeBuffer(timeBuffer, 0, new Float32Array([this.time]));
 
+        // speed
+        const speedBuffer = device.createBuffer({
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+        device.queue.writeBuffer(speedBuffer, 0, new Float32Array([this.config.speed]));
+
         this.bindGroup = device.createBindGroup({
             label: 'perlin bindgroup',
             layout: bindGroupLayout,
@@ -286,6 +322,10 @@ export class PerlinTexture implements PerlinOptions {
                     binding: 5,
                     resource: {buffer: timeBuffer}
                 },
+                {
+                    binding: 6,
+                    resource: {buffer: speedBuffer}
+                },
             ],
         });
     }
@@ -296,10 +336,6 @@ export class PerlinTexture implements PerlinOptions {
 
         canvas.style.width = this.size.width + 'px';
         canvas.style.height = this.size.height + 'px';
-    }
-
-    public updateTime(delta: number) {
-        this.time += delta;
     }
 
     /**
@@ -365,6 +401,7 @@ export class PerlinTexture implements PerlinOptions {
             label: 'shader encoder',
         });
 
+        // vvvvvvvv put this in shader object at some point vvvvvvvvv
         // resolution buffer
         const resBuffer = this.device.createBuffer({
             size:8,
@@ -372,12 +409,20 @@ export class PerlinTexture implements PerlinOptions {
         });
         this.device.queue.writeBuffer(resBuffer, 0, new Float32Array([this.size.width, this.size.height]));
 
+        // time
+        const timeBuffer = this.device.createBuffer({
+            size: 8,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+        this.device.queue.writeBuffer(timeBuffer, 0, new Float32Array([this.time])); // yuck
+
         const bindGroup = this.device.createBindGroup({
             layout: theShader.pipeline.getBindGroupLayout(0),
             entries: [
                 {binding: 0, resource: this.device.createSampler()},
                 {binding: 1, resource: renderTargetA.createView()},
-                {binding: 2, resource: { buffer: resBuffer }}
+                {binding: 2, resource: { buffer: resBuffer }},
+                {binding: 3, resource: { buffer: timeBuffer }},
             ],
         });
 

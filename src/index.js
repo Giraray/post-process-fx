@@ -11,8 +11,6 @@ import CRTShader from './shaderClasses/crtShader.ts'
 
 import erhifhe from './assets/shaders/crt.wgsl?raw';
 
-import { ImgTextureUserConfig } from './configObjects.ts';
-
 if(!navigator.gpu) {
     throw new Error('WebGPU not supported on this browser');
 }
@@ -83,82 +81,9 @@ const imgTexture = new ImgTexture({
     device,
     source,
 });
+
+
 perlinTexture.resizeCanvas(canvas);
-
-// testing!!
-let dataUrl;
-function renderToCanvas(texture, shader) {
-
-    const rtA = device.createTexture({
-        label: 'texA placeholder',
-        format: canvasFormat,
-        size: [source.width, source.height],
-        usage: 
-            GPUTextureUsage.TEXTURE_BINDING |
-            GPUTextureUsage.RENDER_ATTACHMENT |
-            GPUTextureUsage.COPY_SRC
-    });
-
-    const texEncoder = device.createCommandEncoder({
-        label: 'texEncoder',
-    });
-    const pass = texEncoder.beginRenderPass({
-        colorAttachments: [{
-            view: rtA.createView(),
-            clearValue: [0, 0, 0, 1],
-            loadOp: 'clear',
-            storeOp: 'store',
-        }],
-    });
-    texture.createTexture();
-    pass.setPipeline(texture.pipeline);
-    pass.setBindGroup(0, texture.bindGroup);
-    pass.draw(6);
-    pass.end();
-
-    device.queue.submit([texEncoder.finish()]);
-
-
-    // render shaders
-    const chBindGroup = device.createBindGroup({
-        layout: chPipeline.getBindGroupLayout(0),
-        entries: [
-            {binding: 0, resource: sampler},
-            {binding: 1, resource: rtA.createView()},
-        ],
-    });
-
-    const shaderEncoder = device.createCommandEncoder({
-        label: 'shader encoder',
-    });
-
-    const shaderPass = shaderEncoder.beginRenderPass({
-        colorAttachments: [{
-            view: context.getCurrentTexture().createView(),
-            clearValue: [0,0,0,1],
-            loadOp: 'clear',
-            storeOp: 'store',
-        }],
-    });
-    
-    shaderPass.setPipeline(chPipeline);
-    shaderPass.setBindGroup(0, chBindGroup);
-    shaderPass.draw(6);
-    shaderPass.end();
-    
-    device.queue.submit([shaderEncoder.finish()]);
-
-    dataUrl = canvas.toDataURL('image/png'); // store data for save
-
-    if(Object.hasOwn(texture, 'config') && texture.config.animate == true) {
-        setTimeout(() => {
-            texture.updateTime(1);
-            requestAnimationFrame(function() { renderToCanvas(texture) });
-        }, 1000 / 20);
-    }
-}
-
-// renderToCanvas(perlinTexture);
 
 const crtFilter = new CRTShader(device, canvasFormat);
 perlinTexture.addShader(crtFilter);

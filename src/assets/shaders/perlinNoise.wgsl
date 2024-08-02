@@ -4,12 +4,13 @@ struct OurVertexShaderOutput {
     @location(1) fragCoord: vec2f,
 };
 
-@group(0) @binding(0) var<uniform> style: i32;
-@group(0) @binding(1) var<uniform> resolution: vec2<f32>;
-@group(0) @binding(2) var<uniform> seed: f32;
+@group(0) @binding(0) var<uniform> uStyle: i32;
+@group(0) @binding(1) var<uniform> uResolution: vec2<f32>;
+@group(0) @binding(2) var<uniform> uSeed: f32;
 @group(0) @binding(3) var<uniform> gridSize: f32;
-@group(0) @binding(4) var<uniform> intensity: f32;
-@group(0) @binding(5) var<uniform> time: f32;
+@group(0) @binding(4) var<uniform> uIntensity: f32;
+@group(0) @binding(5) var<uniform> uTime: f32;
+@group(0) @binding(6) var<uniform> uSpeed: f32;
 
 @vertex fn vertexMain(
     @builtin(vertex_index) vertexIndex : u32
@@ -33,7 +34,7 @@ struct OurVertexShaderOutput {
     vsOutput.position = vec4f(xy, 0.0, 1.0);
 
     vsOutput.fragUV = (xy + 1) / 2; // convert clip-space (-1 - 1) to UV (0 - 1)
-    vsOutput.fragCoord = vsOutput.fragUV * resolution;
+    vsOutput.fragCoord = vsOutput.fragUV * uResolution;
 
     return vsOutput;
 }
@@ -43,7 +44,7 @@ fn randomGradient(corner: vec2<f32>) -> vec2<f32> {
         var y = dot(corner, vec2(2.3, 1.3));
         var gradient = vec2(x,y);
         gradient = sin(gradient);
-        gradient *= seed + time*0.03;
+        gradient *= uSeed + uTime*0.03*uSpeed;
         gradient = sin(gradient);
         return gradient;
 }
@@ -55,8 +56,8 @@ fn quintic(p: vec2<f32>) -> vec2<f32> {
 @fragment fn fragMain(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
     // var color = textureSample(ourTexture, ourSampler, fsInput.fragUV) + 0.2;  // remove
 
-    var uv = (fsInput.fragCoord - resolution.xy * 0.5) / min(resolution.x, resolution.y);
-    uv += vec2(seed*0.13, seed*0.13);
+    var uv = (fsInput.fragCoord - uResolution.xy * 0.5) / min(uResolution.x, uResolution.y);
+    uv += vec2(uSeed*0.13, uSeed*0.13);
 
     uv *= gridSize;
     
@@ -95,14 +96,14 @@ fn quintic(p: vec2<f32>) -> vec2<f32> {
     var b = mix(dotBl, dotBr, gridUv.x);
     var color = mix(t, b, gridUv.y);
 
-    if(style == 1) {
+    if(uStyle == 1) {
         color = abs(color);
     }
-    else if(style == 2) {
+    else if(uStyle == 2) {
         color = (color + 0.6) / 2.0;
     }
 
-    color = pow(color*intensity, intensity);
+    color = pow(color*uIntensity, uIntensity);
 
     return vec4(vec3(color), 1.0);
 }
