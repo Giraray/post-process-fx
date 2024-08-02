@@ -1,6 +1,7 @@
 import perlinCode from '../assets/shaders/perlinNoise.wgsl?raw';
 import { perlinTextureConfig } from '../createConfig';
 import ShaderObject from './shaderObject'
+import TextureObject from './textureObject';
 
 interface Size {
     width: number,
@@ -30,23 +31,17 @@ interface PerlinOptions {
     config?: PerlinConfig;
     seed: number;
     size: Size;
-    canvasFormat: GPUTextureFormat;
-    device: GPUDevice;
-    context: GPUCanvasContext;
 }
 
 /**
  * Creates an object containing a `GPURenderPipeline` and a `GPUBindGroup` for 
  * a perlin noise texture.
  */
-export class PerlinTexture implements PerlinOptions {
+export class PerlinTexture extends TextureObject implements PerlinOptions {
     time: number = 0;
     config?: PerlinConfig;
     size: Size;
     seed: number;
-    context: GPUCanvasContext;
-    readonly canvasFormat: GPUTextureFormat;
-    readonly device: GPUDevice;
 
     pipeline: GPURenderPipeline;
     bindGroup: GPUBindGroup;
@@ -57,14 +52,11 @@ export class PerlinTexture implements PerlinOptions {
 
     lastUpdate: number;
 
-    constructor(options: PerlinOptions) {
+    constructor(device: GPUDevice, canvasFormat: GPUTextureFormat, context: GPUCanvasContext, options: PerlinOptions) {
+        super(device, canvasFormat, context);
         this.size = options.size;
-        this.canvasFormat = options.canvasFormat;
-        this.device = options.device;
         this.seed = options.seed;
         this.config = options.config ? options.config : undefined;
-        this.context = options.context;
-        this.shaders = new Array<ShaderObject>;
         this.lastUpdate = Date.now();
 
         if(!this.config.animate)
@@ -145,7 +137,7 @@ export class PerlinTexture implements PerlinOptions {
             const now = Date.now();
             const delta = this.lastUpdate - now;
             this.lastUpdate = now;
-            this.time += delta/100;
+            this.time -= delta/100;
 
             requestAnimationFrame(this.renderToCanvas.bind(this));
         }, 1000 / 60);
@@ -166,7 +158,7 @@ export class PerlinTexture implements PerlinOptions {
             entries: [
                 {
                     binding: 0,
-                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
+                    visibility: GPUShaderStage.FRAGMENT,
                     buffer: {
                         type: 'uniform',
                     },
@@ -180,35 +172,35 @@ export class PerlinTexture implements PerlinOptions {
                 },
                 {
                     binding: 2,
-                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
+                    visibility: GPUShaderStage.FRAGMENT,
                     buffer: {
                         type: 'uniform',
                     },
                 },
                 {
                     binding: 3,
-                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
+                    visibility: GPUShaderStage.FRAGMENT,
                     buffer: {
                         type: 'uniform',
                     },
                 },
                 {
                     binding: 4,
-                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
+                    visibility: GPUShaderStage.FRAGMENT,
                     buffer: {
                         type: 'uniform',
                     },
                 },
                 {
                     binding: 5,
-                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
+                    visibility: GPUShaderStage.FRAGMENT,
                     buffer: {
                         type: 'uniform',
                     },
                 },
                 {
                     binding: 6,
-                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
+                    visibility: GPUShaderStage.FRAGMENT,
                     buffer: {
                         type: 'uniform',
                     },
@@ -338,49 +330,36 @@ export class PerlinTexture implements PerlinOptions {
         canvas.style.height = this.size.height + 'px';
     }
 
-    /**
-     * Adds a `ShaderObject` to the `shaders` array.
-     * @param shader The ShaderObject to be added
-     */
-    public addShader(shader: ShaderObject) {
-        this.shaders.push(shader);
-    }
-
-    /**
-     * Replaces the `shaders` array with a new array consisting of every item from the array that does not match 
-     * the specified shader.
-     * @param shader The ShaderObject to be removed
-     */
-    public removeShader(shader: ShaderObject) {
-        const newArray = new Array<ShaderObject>;
-        for(let i = 0; i < this.shaders.length; i++) {
-            if(this.shaders[i] !== shader) {
-                newArray.push(this.shaders[i]);
-            }
-        }
-        this.shaders = newArray;
-    }
-
     public renderToCanvas() {
-
         // render texture
         this.createTexture();
-        const renderTargetA = this.device.createTexture({
-            label: 'texA placeholder',
-            format: this.canvasFormat,
-            size: [this.size.width, this.size.height],
-            usage: 
-                GPUTextureUsage.TEXTURE_BINDING |
-                GPUTextureUsage.RENDER_ATTACHMENT |
-                GPUTextureUsage.COPY_SRC
-        });
+
+        // create renderTarget if a shader is to be applied; otherwise use context
+        let textureOutput: GPUTexture;
+        if(this.shaders.length > 0) {
+
+            const renderTarget = this.device.createTexture({
+                label: 'texA placeholder',
+                format: this.canvasFormat,
+                size: [this.size.width, this.size.height],
+                usage: 
+                    GPUTextureUsage.TEXTURE_BINDING |
+                    GPUTextureUsage.RENDER_ATTACHMENT |
+                    GPUTextureUsage.COPY_SRC
+            });
+
+            textureOutput = renderTarget
+        }
+        else {
+            textureOutput = this.context.getCurrentTexture();
+        }
 
         const textureEncoder = this.device.createCommandEncoder({
             label: 'texEncoder',
         });
         const pass = textureEncoder.beginRenderPass({
             colorAttachments: [{
-                view: renderTargetA.createView(),
+                view: textureOutput.createView(),
                 clearValue: [0, 0, 0, 1],
                 loadOp: 'clear',
                 storeOp: 'store',
@@ -394,53 +373,36 @@ export class PerlinTexture implements PerlinOptions {
         this.device.queue.submit([textureEncoder.finish()]);
 
 
-        // RENDER SHADER
-        const theShader = this.shaders[0];
-    
-        const shaderEncoder = this.device.createCommandEncoder({
-            label: 'shader encoder',
-        });
-
-        // vvvvvvvv put this in shader object at some point vvvvvvvvv
-        // resolution buffer
-        const resBuffer = this.device.createBuffer({
-            size:8,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
-        this.device.queue.writeBuffer(resBuffer, 0, new Float32Array([this.size.width, this.size.height]));
-
-        // time
-        const timeBuffer = this.device.createBuffer({
-            size: 8,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
-        this.device.queue.writeBuffer(timeBuffer, 0, new Float32Array([this.time])); // yuck
-
-        const bindGroup = this.device.createBindGroup({
-            layout: theShader.pipeline.getBindGroupLayout(0),
-            entries: [
-                {binding: 0, resource: this.device.createSampler()},
-                {binding: 1, resource: renderTargetA.createView()},
-                {binding: 2, resource: { buffer: resBuffer }},
-                {binding: 3, resource: { buffer: timeBuffer }},
-            ],
-        });
-
-        const shaderPass = shaderEncoder.beginRenderPass({
-            colorAttachments: [{
-                view: this.context.getCurrentTexture().createView(),
-                clearValue: [0,0,0,1],
-                loadOp: 'clear',
-                storeOp: 'store',
-            }],
-        });
+        // RENDER SHADER (if exists)
+        if(this.shaders.length > 0) {
+            const shader = this.shaders[0];
+            shader.renderTarget = textureOutput;
         
-        shaderPass.setPipeline(theShader.pipeline);
-        shaderPass.setBindGroup(0, bindGroup);
-        shaderPass.draw(6);
-        shaderPass.end();
-        
-        this.device.queue.submit([shaderEncoder.finish()]);
+            const shaderEncoder = this.device.createCommandEncoder({
+                label: 'shader encoder',
+            });
+
+            const bindGroup = this.device.createBindGroup({
+                layout: shader.pipeline.getBindGroupLayout(0),
+                entries: shader.createBindings(this.time, {width: this.size.width, height: this.size.height}),
+            });
+
+            const shaderPass = shaderEncoder.beginRenderPass({
+                colorAttachments: [{
+                    view: this.context.getCurrentTexture().createView(),
+                    clearValue: [0,0,0,1],
+                    loadOp: 'clear',
+                    storeOp: 'store',
+                }],
+            });
+            
+            shaderPass.setPipeline(shader.pipeline);
+            shaderPass.setBindGroup(0, bindGroup);
+            shaderPass.draw(6);
+            shaderPass.end();
+            
+            this.device.queue.submit([shaderEncoder.finish()]);
+        }
 
         this.dataUrl = (<HTMLCanvasElement>this.context.canvas).toDataURL('image/png');
 

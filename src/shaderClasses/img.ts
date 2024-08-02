@@ -49,7 +49,7 @@ export class ImgTexture {
             {texture: texture},
             {width: source.width, height: source.height},
         );
-        this.texture = texture; // declare
+        this.texture = texture;
 
         // shader module
         const shaderModule = device.createShaderModule({

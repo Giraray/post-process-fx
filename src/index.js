@@ -49,10 +49,8 @@ const sampler = device.createSampler();
 const w = document.getElementById('imgDisp').clientWidth;
 const h = document.getElementById('imgDisp').clientHeight;
 
-const perlinTexture = new PerlinTexture({
+const perlinTexture = new PerlinTexture(device, canvasFormat, context, {
     size: {width: w, height: h,},
-    canvasFormat,
-    device,
     seed: Math.random() * 100000,
     context,
     config: {
