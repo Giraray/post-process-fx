@@ -2,6 +2,7 @@ import ShaderObject from './shaderObject'
 
 export default class TextureObject {
     shaders: Array<ShaderObject>;
+    dataUrl: string;
     readonly device: GPUDevice;
     readonly canvasFormat: GPUTextureFormat;
     readonly context: GPUCanvasContext;

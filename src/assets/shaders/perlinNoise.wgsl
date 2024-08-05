@@ -44,7 +44,7 @@ fn randomGradient(corner: vec2<f32>) -> vec2<f32> {
         var y = dot(corner, vec2(2.3, 1.3));
         var gradient = vec2(x,y);
         gradient = sin(gradient);
-        gradient *= uSeed + uTime*0.03*uSpeed;
+        gradient *= uSeed + uTime*0.3*uSpeed;
         gradient = sin(gradient);
         return gradient;
 }

@@ -1,36 +1,83 @@
 import shaderCode from '../assets/shaders/defaultShader.wgsl?raw';
+import TextureObject from './textureObject';
+import { imgTextureConfig } from '../createConfig';
 
 interface Size {
     width: number,
     height: number,
 }
 
-interface ImgTextureOptions {
-    size: Size;
-    canvasFormat: GPUTextureFormat;
-    device: GPUDevice;
-    source: ImageBitmap;
-}
-
-export class ImgTexture {
+export class ImgTexture extends TextureObject {
 
     size: Size;
     canvasFormat: GPUTextureFormat;
     device: GPUDevice;
     source: ImageBitmap;
+    container: HTMLDivElement;
+    sizeMultiplier: Size;
 
-    texture: GPUTexture;
+    resize: boolean;
+
     bindGroup: GPUBindGroup;
     pipeline: GPURenderPipeline;
 
-    constructor(options: ImgTextureOptions) {
-        this.size = options.size;
-        this.canvasFormat = options.canvasFormat;
-        this.device = options.device;
-        this.source = options.source;
+    constructor(
+        device: GPUDevice, canvasFormat: GPUTextureFormat, context: GPUCanvasContext, source: ImageBitmap
+    ) {
+        super(device, canvasFormat, context);
+        this.container = <HTMLDivElement>document.getElementById('imgDisp');
+        this.sizeMultiplier = {width: 1,height: 1,};
+        this.source = source;
+
+        this.resizeDimensions(true);
     }
 
-    createTexture() {
+    resizeDimensions(resize: boolean) {
+        if(resize === false) {
+            this.sizeMultiplier = {
+                width: 1,
+                height: 1,
+            };
+        }
+        else {
+            const source = this.source;
+            const w = this.container.clientWidth;
+            const h = this.container.clientHeight;
+            
+            if(source.width/source.height > w/h) {
+                this.sizeMultiplier.height = w / source.width;
+                this.sizeMultiplier.width = w / source.width;
+            }
+            else {
+                this.sizeMultiplier.height = h / source.height;
+                this.sizeMultiplier.width = h / source.height;
+            }
+        }
+
+        this.size = {
+            width: this.source.width * this.sizeMultiplier.width,
+            height: this.source.height * this.sizeMultiplier.height,
+        }
+    }
+
+    initConfig() {
+        // generate user config
+        document.getElementById('textureOptions').innerHTML = imgTextureConfig;
+
+        // EVENT LISTENERS
+        const self = this;
+        const resizeElm = <HTMLInputElement>document.getElementById('resize');
+
+        // resize
+        resizeElm.addEventListener('change', function(event) {
+            let value = (event.target as HTMLInputElement).checked === true ? true : false;
+            self.resize = value;
+
+            self.renderToCanvas();
+        });
+    }
+
+    updateTexture() {
         const source = this.source;
         const device = this.device;
 
@@ -44,12 +91,14 @@ export class ImgTexture {
                 GPUTextureUsage.TEXTURE_BINDING |
                 GPUTextureUsage.RENDER_ATTACHMENT,
         });
+        let flipped: boolean = true;
+        if(this.shaders.length > 0)
+            flipped = false;
         device.queue.copyExternalImageToTexture(
-            {source: source, flipY: true},
+            {source: source, flipY: flipped},
             {texture: texture},
             {width: source.width, height: source.height},
         );
-        this.texture = texture;
 
         // shader module
         const shaderModule = device.createShaderModule({
@@ -78,7 +127,7 @@ export class ImgTexture {
             layout: pipeline.getBindGroupLayout(0),
             entries: [
                 {binding: 0, resource: sampler},
-                {binding: 1, resource: this.texture.createView()},
+                {binding: 1, resource: texture.createView()},
             ],
         });
 
@@ -86,19 +135,72 @@ export class ImgTexture {
         this.pipeline = pipeline;
     }
 
-    public resizeCanvas(canvas: HTMLCanvasElement) {
-        const maxW = parseInt(canvas.style.maxWidth.slice(0,-2)); // bruh
-        const maxH = parseInt(canvas.style.maxHeight.slice(0,-2));
+    public renderToCanvas() {
+        this.updateTexture();
 
-        if(this.size.width > maxW)
-            this.size.width = maxW;
-        if(this.size.height > maxH)
-            this.size.height = maxH;
+        // create renderTarget if a shader is to be applied; otherwise use context
+        let textureOutput: GPUTexture;
+        if(this.shaders.length > 0) {
+
+            const renderTarget = this.device.createTexture({
+                label: 'texA placeholder',
+                format: this.canvasFormat,
+                size: [this.size.width, this.size.height],
+                usage: 
+                    GPUTextureUsage.TEXTURE_BINDING |
+                    GPUTextureUsage.RENDER_ATTACHMENT |
+                    GPUTextureUsage.COPY_SRC
+            });
+
+            textureOutput = renderTarget
+        }
+        else {
+            textureOutput = this.context.getCurrentTexture();
+        }
+
+        const textureEncoder = this.device.createCommandEncoder({
+            label: 'texEncoder',
+        });
+        const pass = textureEncoder.beginRenderPass({
+            colorAttachments: [{
+                view: textureOutput.createView(),
+                clearValue: [0, 0, 0, 1],
+                loadOp: 'clear',
+                storeOp: 'store',
+            }],
+        });
+        pass.setPipeline(this.pipeline);
+        pass.setBindGroup(0, this.bindGroup);
+        pass.draw(6);
+        pass.end();
+
+        this.device.queue.submit([textureEncoder.finish()]);
+
+        // RENDER SHADER (if exists)
+        if(this.shaders.length > 0) {
+            const shader = this.shaders[0];
+
+            shader.renderTarget = textureOutput;
+            shader.renderOnTimer({
+                size: {
+                    width: this.size.width,
+                    height: this.size.height,
+                },
+                canvasFormat: this.canvasFormat,
+                context: this.context,
+                finalRender: true,
+            });
+        }
+
+        this.dataUrl = (<HTMLCanvasElement>this.context.canvas).toDataURL('image/png');
+    }
+
+    public resizeCanvas() {
+        const canvas = <HTMLCanvasElement>this.context.canvas;
+        canvas.width = this.size.width;
+        canvas.height = this.size.height;
 
         canvas.style.width = this.size.width + 'px';
         canvas.style.height = this.size.height + 'px';
-
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
     }
 }

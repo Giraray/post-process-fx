@@ -2,9 +2,13 @@ import ShaderObject from './shaderObject';
 import shaderCode from '../assets/shaders/crt.wgsl?raw'
 
 export default class CRTShader extends ShaderObject {
+    timeout: number;
+    lastUpdate: number;
+    time: number;
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
         super(device);
         this.code = shaderCode;
+        this.time = 0;
         this.shaderModule = device.createShaderModule({
             code: this.code,
         });
@@ -20,7 +24,7 @@ export default class CRTShader extends ShaderObject {
         });
     }
 
-    createBindings(time: number, {width, height}) {
+    createBindings(time: number, width: number, height: number) {
         // create timeBuffer
         const timeBuffer = this.device.createBuffer({
             size: 8,

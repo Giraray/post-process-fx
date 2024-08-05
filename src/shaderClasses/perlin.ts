@@ -46,14 +46,13 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
     pipeline: GPURenderPipeline;
     bindGroup: GPUBindGroup;
 
-    shaders: Array<ShaderObject>;
     timeout: ReturnType<typeof setTimeout>;
-    dataUrl: string;
 
     lastUpdate: number;
 
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat, context: GPUCanvasContext, options: PerlinOptions) {
         super(device, canvasFormat, context);
+        console.log(options)
         this.size = options.size;
         this.seed = options.seed;
         this.config = options.config ? options.config : undefined;
@@ -67,7 +66,9 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
             this.config.gridSize = 2;
         if(!this.config.speed)
             this.config.speed = 1;
+    }
 
+    initConfig() {
         // generate user config
         document.getElementById('textureOptions').innerHTML = perlinTextureConfig;
 
@@ -89,7 +90,7 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
 
             clearTimeout(self.timeout);
             self.renderToCanvas();
-        })
+        });
 
         // style
         styleElm.addEventListener('change', function(event) {
@@ -98,7 +99,7 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
 
             clearTimeout(self.timeout);
             self.renderToCanvas();
-        })
+        });
 
         // gridSize
         gridSizeElm.addEventListener('change', function(event) {
@@ -109,7 +110,7 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
 
             clearTimeout(self.timeout);
             self.renderToCanvas();
-        })
+        });
 
         // animate
         animateElm.addEventListener('change', function(event) {
@@ -118,7 +119,7 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
 
             clearTimeout(self.timeout);
             self.renderToCanvas();
-        })
+        });
 
         speedElm.addEventListener('change', function(event) {
             let value = parseFloat((event.target as HTMLInputElement).value);
@@ -128,23 +129,24 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
 
             clearTimeout(self.timeout);
             self.renderToCanvas();
-        })
+        });
     }
 
     setTimer() {
-        this.timeout = setTimeout(() => {
+        clearInterval(this.timeout);
+        this.timeout = setInterval(() => {
 
             const now = Date.now();
             const delta = this.lastUpdate - now;
             this.lastUpdate = now;
-            this.time -= delta/100;
+            this.time -= delta/1000;
 
             requestAnimationFrame(this.renderToCanvas.bind(this));
         }, 1000 / 60);
     }
 
     // create texture
-    createTexture() {
+    updateTexture() {
         const device = this.device;
         const canvasFormat = this.canvasFormat
 
@@ -322,7 +324,8 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
         });
     }
 
-    public resizeCanvas(canvas: HTMLCanvasElement) {
+    public resizeCanvas() {
+        const canvas = <HTMLCanvasElement>this.context.canvas;
         canvas.width = this.size.width;
         canvas.height = this.size.height;
 
@@ -332,7 +335,7 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
 
     public renderToCanvas() {
         // render texture
-        this.createTexture();
+        this.updateTexture();
 
         // create renderTarget if a shader is to be applied; otherwise use context
         let textureOutput: GPUTexture;
@@ -376,32 +379,17 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
         // RENDER SHADER (if exists)
         if(this.shaders.length > 0) {
             const shader = this.shaders[0];
+
             shader.renderTarget = textureOutput;
-        
-            const shaderEncoder = this.device.createCommandEncoder({
-                label: 'shader encoder',
+            shader.renderOnTimer({
+                size: {
+                    width: this.size.width,
+                    height: this.size.height,
+                },
+                canvasFormat: this.canvasFormat,
+                context: this.context,
+                finalRender: true,
             });
-
-            const bindGroup = this.device.createBindGroup({
-                layout: shader.pipeline.getBindGroupLayout(0),
-                entries: shader.createBindings(this.time, {width: this.size.width, height: this.size.height}),
-            });
-
-            const shaderPass = shaderEncoder.beginRenderPass({
-                colorAttachments: [{
-                    view: this.context.getCurrentTexture().createView(),
-                    clearValue: [0,0,0,1],
-                    loadOp: 'clear',
-                    storeOp: 'store',
-                }],
-            });
-            
-            shaderPass.setPipeline(shader.pipeline);
-            shaderPass.setBindGroup(0, bindGroup);
-            shaderPass.draw(6);
-            shaderPass.end();
-            
-            this.device.queue.submit([shaderEncoder.finish()]);
         }
 
         this.dataUrl = (<HTMLCanvasElement>this.context.canvas).toDataURL('image/png');

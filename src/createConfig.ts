@@ -33,3 +33,11 @@ export const perlinTextureConfig: string = `
         <input type="number" class="border000" value="1" id="speed">
     </div>
 `
+
+export const imgTextureConfig: string = `
+    <!-- boolean input -->
+    <div class="option-container option-container_boolean border444" title="Resizes the image to fit the container">
+        <span class="input-desc">Resize:</span>
+        <input type="checkbox" class="checkbox border000" id="resize" checked>
+    </div>
+`
