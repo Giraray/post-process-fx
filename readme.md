@@ -5,7 +5,7 @@ todo:
 
 
 bugs and low priority stuff:
-- Application of shaders persists upon initTexture() when the shader should stay removed.
+- Application of shaders persists upon initTexture() when the shader has been removed from texture.
 - Insert image needs error handling.
 - ImgTexture needs Resize option.
 - PerlinTexture should have billowRidge style.
