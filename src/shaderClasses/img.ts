@@ -92,7 +92,7 @@ export class ImgTexture extends TextureObject {
                 GPUTextureUsage.RENDER_ATTACHMENT,
         });
         let flipped: boolean = true;
-        if(this.shaders.length > 0)
+        if(this.shader)
             flipped = false;
         device.queue.copyExternalImageToTexture(
             {source: source, flipY: flipped},
@@ -140,7 +140,7 @@ export class ImgTexture extends TextureObject {
 
         // create renderTarget if a shader is to be applied; otherwise use context
         let textureOutput: GPUTexture;
-        if(this.shaders.length > 0) {
+        if(this.shader) {
 
             const renderTarget = this.device.createTexture({
                 label: 'texA placeholder',
@@ -177,8 +177,8 @@ export class ImgTexture extends TextureObject {
         this.device.queue.submit([textureEncoder.finish()]);
 
         // RENDER SHADER (if exists)
-        if(this.shaders.length > 0) {
-            const shader = this.shaders[0];
+        if(this.shader) {
+            const shader = this.shader;
 
             shader.renderTarget = textureOutput;
             shader.renderOnTimer({

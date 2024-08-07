@@ -11,6 +11,7 @@ struct OurVertexShaderOutput {
 @group(0) @binding(4) var<uniform> uIntensity: f32;
 @group(0) @binding(5) var<uniform> uTime: f32;
 @group(0) @binding(6) var<uniform> uSpeed: f32;
+@group(0) @binding(7) var<uniform> uFractals: f32;
 
 @vertex fn vertexMain(
     @builtin(vertex_index) vertexIndex : u32
@@ -40,11 +41,11 @@ struct OurVertexShaderOutput {
 }
 
 fn randomGradient(corner: vec2<f32>) -> vec2<f32> {
-        var x = dot(corner, vec2(1.9, 1.5));
+        var x = dot(corner, vec2(1.9, 1.53432));
         var y = dot(corner, vec2(2.3, 1.3));
         var gradient = vec2(x,y);
         gradient = sin(gradient);
-        gradient *= uSeed + uTime*0.3*uSpeed;
+        gradient = gradient * uSeed + uTime*0.3*uSpeed;
         gradient = sin(gradient);
         return gradient;
 }
@@ -97,8 +98,9 @@ fn quintic(p: vec2<f32>) -> vec2<f32> {
     var color = mix(t, b, gridUv.y);
 
     if(uStyle == 1) {
-        color = abs(color);
+        color = fract(color * uFractals);
     }
+
     else if(uStyle == 2) {
         color = (color + 0.6) / 2.0;
     }

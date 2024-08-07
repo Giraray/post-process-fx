@@ -1,39 +1,34 @@
 import ShaderObject from './shaderObject'
 
 export default class TextureObject {
-    shaders: Array<ShaderObject>;
+    shader: ShaderObject | null;
     dataUrl: string;
     readonly device: GPUDevice;
     readonly canvasFormat: GPUTextureFormat;
     readonly context: GPUCanvasContext;
 
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat, context: GPUCanvasContext) {
-        this.shaders = new Array<ShaderObject>;
         this.device = device;
         this.canvasFormat = canvasFormat;
         this.context = context;
     }
 
     /**
-     * Replaces the `shaders` array with a new array consisting of every item from the array that does not match 
-     * the specified shader.
-     * @param shader The ShaderObject to be removed
+     * Sets or removes a texture's active shader.
+     * @param shader Removes and deactivates current shaders if null
      */
-    public removeShader(shader: ShaderObject) {
-        const newArray = new Array<ShaderObject>;
-        for(let i = 0; i < this.shaders.length; i++) {
-            if(this.shaders[i] !== shader) {
-                newArray.push(this.shaders[i]);
-            }
-        }
-        this.shaders = newArray;
-    }
+    public setShader(shader: ShaderObject | null) {
 
-    /**
-     * Adds a `ShaderObject` to the `shaders` array.
-     * @param shader The ShaderObject to be added
-     */
-    public addShader(shader: ShaderObject) {
-        this.shaders.push(shader);
+        // if shader exists from before: deactive it
+        if(this.shader != undefined) {
+            clearInterval(this.shader.timeout);
+        }
+
+        // if current shader is selected again: negate it
+        if(this.shader != undefined && shader != null && shader.constructor.name === this.shader.constructor.name) {
+            shader = null;
+        }
+
+        this.shader = shader;
     }
 }

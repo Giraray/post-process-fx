@@ -36,10 +36,14 @@ function detachTexture() {
 }
 
 function initTexture() {
-    texture.addShader(crtFilter);
+    texture.setShader(shader);
     texture.initConfig();
     texture.resizeCanvas();
     texture.renderToCanvas();
+}
+
+function createImgTexture(source) {
+    return new ImgTexture(device, canvasFormat, context, source);
 }
 
 // load texture function
@@ -52,25 +56,32 @@ async function loadTexture(url) {
 // default source
 const source = await loadTexture(defaultImg);
 
+// default texture
+let texture = createImgTexture(source);
 
-let texture = new ImgTexture(device, canvasFormat, context, source);
-const divWidth = document.getElementById('imgDisp').clientWidth;
-const divHeight = document.getElementById('imgDisp').clientHeight;
+const divSize = {
+    width: document.getElementById('imgDisp').clientWidth,
+    height: document.getElementById('imgDisp').clientHeight
+}
 
+//
 // TEXTURE PRESETS
+//
 const defaultImgSelect = document.getElementById('defaultImg');
 const perlinSelect = document.getElementById('perlinTexture');
 
+// elias texture
 defaultImgSelect.addEventListener('click', function() {
     detachTexture();
     texture = new ImgTexture(device, canvasFormat, context, source);
     initTexture();
 })
 
+// perlin texture
 perlinSelect.addEventListener('click', function() {
     detachTexture();
     texture = new PerlinTexture(device, canvasFormat, context, {
-        size: {width: divWidth, height: divHeight,},
+        size: divSize,
         seed: Math.random() * 100000,
         context,
         config: {
@@ -83,7 +94,20 @@ perlinSelect.addEventListener('click', function() {
     initTexture();
 });
 
-const crtFilter = new CRTShader(device, canvasFormat);
+
+//
+// SHADERS
+//
+const crtSelect = document.getElementById('crtShader');
+
+let shader;
+
+// crt shader
+crtSelect.addEventListener('click', function() {
+    const crtShader = new CRTShader(device, canvasFormat);
+    shader = crtShader;
+    initTexture();
+});
 
 initTexture();
 
@@ -92,4 +116,24 @@ initTexture();
 const downloadBtn = document.getElementById('download');
 downloadBtn.onclick = function() {
     downloadBtn.href = texture.dataUrl;
+}
+
+// INSERT
+const insertBtn = document.getElementById('insertBtn');
+insertBtn.onchange = processInput;
+
+function processInput() {
+    const file = insertBtn.files[0];
+    console.log(file)
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+
+    reader.onload = async function(e) {
+        const res = await fetch(e.target.result);
+        const blob = await res.blob();
+        const source = await createImageBitmap(blob, {colorSpaceConversion: 'none'});
+
+        texture = createImgTexture(source);
+        initTexture();
+    }
 }

@@ -20,10 +20,11 @@ interface PerlinConfig {
     intensity?: number;
     animate?: boolean;
     speed?: number;
+    fractals?: number;
 }
 
 type StyleOptions =
-    | 'billowRidge'
+    | 'fractal'
     | 'natural'
     | 'normalized';
 
@@ -52,7 +53,6 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
 
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat, context: GPUCanvasContext, options: PerlinOptions) {
         super(device, canvasFormat, context);
-        console.log(options)
         this.size = options.size;
         this.seed = options.seed;
         this.config = options.config ? options.config : undefined;
@@ -66,6 +66,8 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
             this.config.gridSize = 2;
         if(!this.config.speed)
             this.config.speed = 1;
+        if(!this.config.fractals)
+            this.config.fractals = 5;
     }
 
     initConfig() {
@@ -80,6 +82,7 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
         const gridSizeElm = <HTMLInputElement>document.getElementById('gridSize');
         const animateElm = <HTMLInputElement>document.getElementById('animate');
         const speedElm = <HTMLInputElement>document.getElementById('speed');
+        const fractalsElm = <HTMLInputElement>document.getElementById('fractals');
 
         // intensity
         intensityElm.addEventListener('change', function(event) {
@@ -126,6 +129,16 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
             if(isNaN(value))
                 value = 0;
             config.speed = value;
+
+            clearTimeout(self.timeout);
+            self.renderToCanvas();
+        });
+
+        fractalsElm.addEventListener('change', function(event) {
+            let value = parseFloat((event.target as HTMLInputElement).value);
+            if(isNaN(value))
+                value = 0;
+            config.fractals = value;
 
             clearTimeout(self.timeout);
             self.renderToCanvas();
@@ -207,6 +220,13 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
                         type: 'uniform',
                     },
                 },
+                {
+                    binding: 7,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    buffer: {
+                        type: 'uniform',
+                    },
+                },
             ]
         });
 
@@ -227,7 +247,7 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
         // style options
         let styleValue: number;
         switch (this.config.style) {
-            case 'billowRidge':
+            case 'fractal':
                 styleValue = 1;
                 break;
             case 'normalized':
@@ -288,6 +308,13 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
         });
         device.queue.writeBuffer(speedBuffer, 0, new Float32Array([this.config.speed]));
 
+        // fractals
+        const fractalsBuffer = device.createBuffer({
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+        device.queue.writeBuffer(fractalsBuffer, 0, new Float32Array([this.config.fractals]));
+
         this.bindGroup = device.createBindGroup({
             label: 'perlin bindgroup',
             layout: bindGroupLayout,
@@ -320,6 +347,10 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
                     binding: 6,
                     resource: {buffer: speedBuffer}
                 },
+                {
+                    binding: 7,
+                    resource: {buffer: fractalsBuffer}
+                },
             ],
         });
     }
@@ -339,7 +370,7 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
 
         // create renderTarget if a shader is to be applied; otherwise use context
         let textureOutput: GPUTexture;
-        if(this.shaders.length > 0) {
+        if(this.shader) {
 
             const renderTarget = this.device.createTexture({
                 label: 'texA placeholder',
@@ -377,8 +408,8 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
 
 
         // RENDER SHADER (if exists)
-        if(this.shaders.length > 0) {
-            const shader = this.shaders[0];
+        if(this.shader) {
+            const shader = this.shader;
 
             shader.renderTarget = textureOutput;
             shader.renderOnTimer({

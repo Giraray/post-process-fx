@@ -1,0 +1,18 @@
+A silly website to showcase silly shaders
+
+todo:
+- ASCII shader
+
+
+bugs and low priority stuff:
+- Application of shaders persists upon initTexture() when the shader should stay removed.
+- Insert image needs error handling.
+- ImgTexture needs Resize option.
+- PerlinTexture should have billowRidge style.
+- Texture config interfaces are not needed, and config values are weird in the constructor.
+
+big picture plans:
+- UI overhaul
+
+other wonderful ideas:
+- Config HTML should be automatically generated and maintained.

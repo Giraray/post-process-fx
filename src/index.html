@@ -43,12 +43,14 @@
 
             <div class="shader-select border444">
 
-                <!-- CRT filter -->
+                <div class="shader-select_item border444 slot" title="CRT Filter" id="crtShader">
+                    <img src="./assets/thumbnails/crtFilterTN.png" alt="CRT Shader">
+                </div>
+
                 <!-- ASCII shader -->
                 <!-- Comic book shader -->
                 <!-- Halftone shader -->
 
-                <div class="shader-select_item border444 slot"></div>
                 <div class="shader-select_item border444 slot"></div>
                 <div class="shader-select_item border444 slot"></div>
                 <div class="shader-select_item border444 slot"></div>
@@ -74,9 +76,10 @@
             </div>
 
             <div class="btn-div">
-                <button class="insert border444">Insert image</button>
+                <input type="file" class="insert border444" id="insertBtn" hidden>
+                <label for="insertBtn" class="insert btn-div_btn border444">Insert</label>
                 <a href="" download id="download">
-                    <button class="save border444">Download image</button>
+                    <button class="save border444 btn-div_btn">Download</button>
                 </a>
             </div>
         </div>

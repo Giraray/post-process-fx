@@ -16,9 +16,15 @@ export const perlinTextureConfig: string = `
         <span class="input-desc">Style:</span>
         <select class="option-select border000" id="style">
             <option value="natural">Natural</option>
-            <option value="billowRidge">Billow ridge</option>
+            <option value="fractal">Fractal</option>
             <option value="normalized">Normalized</option>
         </select>
+    </div>
+
+    <!-- fractal -->
+    <div class="option-container option-container_input border444" title="Fractal of product - No effect if Style is not Fractal">
+        <span class="input-desc">Fractals:</span>
+        <input type="number" class="border000" value="5" id="fractals">
     </div>
 
     <!-- boolean input -->

@@ -227,7 +227,7 @@ input::-webkit-inner-spin-button {
 
 .slot > img {
     width: 100%;
-    height: 100%;
+    height: auto;
 
     transition: filter 0.2s;
 }
@@ -243,9 +243,17 @@ input::-webkit-inner-spin-button {
     align-items: center;
 }
 
-.btn-div button {
+.btn-div > a {
+    text-decoration: none;
+}
+
+.btn-div_btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
     height: 30px;
-    width: 130px;
+    width: 100px;
 
     background-color: #222;
     cursor: pointer;
