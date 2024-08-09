@@ -41,7 +41,7 @@ struct OurVertexShaderOutput {
 }
 
 fn randomGradient(corner: vec2<f32>) -> vec2<f32> {
-        var x = dot(corner, vec2(1.9, 1.53432));
+        var x = dot(corner, vec2(1.9, 1.2));
         var y = dot(corner, vec2(2.3, 1.3));
         var gradient = vec2(x,y);
         gradient = sin(gradient);
@@ -58,7 +58,7 @@ fn quintic(p: vec2<f32>) -> vec2<f32> {
     // var color = textureSample(ourTexture, ourSampler, fsInput.fragUV) + 0.2;  // remove
 
     var uv = (fsInput.fragCoord - uResolution.xy * 0.5) / min(uResolution.x, uResolution.y);
-    uv += vec2(uSeed*0.13, uSeed*0.13);
+    uv += vec2(uSeed*0.13, uSeed*0.23);
 
     uv *= gridSize;
     

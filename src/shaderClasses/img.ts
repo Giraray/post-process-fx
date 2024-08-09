@@ -180,7 +180,7 @@ export class ImgTexture extends TextureObject {
         if(this.shader) {
             const shader = this.shader;
 
-            shader.renderTarget = textureOutput;
+            shader.texture = textureOutput;
             shader.renderOnTimer({
                 size: {
                     width: this.size.width,

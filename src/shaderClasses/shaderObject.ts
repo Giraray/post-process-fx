@@ -11,12 +11,28 @@ interface RenderDescriptor {
     renderTarget?: GPUTexture
 }
 
-export default abstract class ShaderObject {
+type ShaderType =
+    'render' |
+    'compute'
+
+interface ShaderProgram {
+    label: string;
+    passType: ShaderType;
+    pipeline: GPURenderPipeline | GPUComputePipeline;
+    entries: Array<GPUBindGroupEntry>;
+}
+
+export interface ProgramInstructions {
+    label: string;
+    passes: Array<ShaderProgram>;
+}
+
+export abstract class ShaderObject {
     code: string;
     shaderModule: GPUShaderModule;
     pipeline: GPURenderPipeline;
     bindGroup: GPUBindGroup;
-    renderTarget: GPUTexture;
+    texture: GPUTexture;
 
     timeout: number;
     time: number;
@@ -32,7 +48,7 @@ export default abstract class ShaderObject {
         this.lastUpdate = Date.now();
     }
 
-    abstract createBindings(...args: any): unknown;
+    abstract createInstructions(...args: any): ProgramInstructions;
 
     render(options: RenderDescriptor) {
 
@@ -48,48 +64,53 @@ export default abstract class ShaderObject {
         }
 
         let textureOutput: GPUTexture;
-        if(options.finalRender === false) {
+        const instructions = this.createInstructions(this.time, options.size.width, options.size.height);
+        for(let i = 1; i <= instructions.passes.length; i++) {
+            const shader = instructions.passes[i-1];
 
-            const renderTarget = this.device.createTexture({
-                label: 'texA placeholder',
-                format: options.canvasFormat,
-                size: [options.size.width, options.size.height],
-                usage: 
-                    GPUTextureUsage.TEXTURE_BINDING |
-                    GPUTextureUsage.RENDER_ATTACHMENT |
-                    GPUTextureUsage.COPY_SRC
-            });
+            // if this shader is not the last operation, then create a new GPUTexture as an output 
+            if(i < instructions.passes.length) {
+                const renderTarget = this.device.createTexture({
+                    label: 'texA placeholder',
+                    format: options.canvasFormat,
+                    size: [options.size.width, options.size.height],
+                    usage: 
+                        GPUTextureUsage.TEXTURE_BINDING |
+                        GPUTextureUsage.RENDER_ATTACHMENT |
+                        GPUTextureUsage.COPY_SRC
+                });
+                textureOutput = renderTarget
+            }
+            else {
+                textureOutput = options.context.getCurrentTexture();
+            }
 
-            textureOutput = renderTarget
+            // if shader is a render shader, then do rendering stuff
+            if(shader.passType === 'render') {
+                const pass = this.device.createCommandEncoder({
+                    label: shader.label,
+                });
+                const bindGroup = this.device.createBindGroup({
+                    layout: shader.pipeline.getBindGroupLayout(0),
+                    entries: shader.entries
+                });
+                const renderPass = pass.beginRenderPass({
+                    colorAttachments: [{
+                        view: textureOutput.createView(),
+                        clearValue: [0,0,0,1],
+                        loadOp: 'clear',
+                        storeOp: 'store',
+                    }],
+                });
+
+                renderPass.setPipeline(<GPURenderPipeline>shader.pipeline);
+                renderPass.setBindGroup(0, bindGroup);
+                renderPass.draw(6);
+                renderPass.end();
+                
+                this.device.queue.submit([pass.finish()]);
+            }
         }
-        else {
-            textureOutput = options.context.getCurrentTexture();
-        }
-    
-        const shaderEncoder = this.device.createCommandEncoder({
-            label: 'shader encoder',
-        });
-
-        const bindGroup = this.device.createBindGroup({
-            layout: this.pipeline.getBindGroupLayout(0),
-            entries: this.createBindings(this.time, options.size.width, options.size.height),
-        });
-
-        const shaderPass = shaderEncoder.beginRenderPass({
-            colorAttachments: [{
-                view: textureOutput.createView(),
-                clearValue: [0,0,0,1],
-                loadOp: 'clear',
-                storeOp: 'store',
-            }],
-        });
-        
-        shaderPass.setPipeline(this.pipeline);
-        shaderPass.setBindGroup(0, bindGroup);
-        shaderPass.draw(6);
-        shaderPass.end();
-        
-        this.device.queue.submit([shaderEncoder.finish()]);
     }
 
     renderOnTimer(options: RenderDescriptor) {
@@ -102,6 +123,6 @@ export default abstract class ShaderObject {
             this.time -= delta/1000;
 
             requestAnimationFrame(this.render.bind(this, options));
-        }, 1000 / 60);
+        }, 1000 / 10);
     }
 }

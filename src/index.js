@@ -8,14 +8,15 @@ import {ImgTexture} from './shaderClasses/img.ts';
 
 // shaders
 import CRTShader from './shaderClasses/crtShader.ts'
-
-import erhifhe from './assets/shaders/crt.wgsl?raw';
+import AsciiShader from './shaderClasses/asciiShader.ts'
 
 if(!navigator.gpu) {
+    alert('WebGPU is not supported in this browser')
     throw new Error('WebGPU not supported on this browser');
 }
 const adapter = await navigator.gpu.requestAdapter();
 if(!adapter) {
+    alert(`No appropriate GPUAdapter found. There are either no GPUs available for the browser, or the browser settings has graphics acceleration turned off.`)
     throw new Error('No appropriate GPUAdapter found');
 }
 
@@ -99,6 +100,7 @@ perlinSelect.addEventListener('click', function() {
 // SHADERS
 //
 const crtSelect = document.getElementById('crtShader');
+const asciiSelect = document.getElementById('asciiShader');
 
 let shader;
 
@@ -109,6 +111,17 @@ crtSelect.addEventListener('click', function() {
     initTexture();
 });
 
+// ascii shader
+asciiSelect.addEventListener('click', function() {
+    const asciiShader = new AsciiShader(device, canvasFormat);
+    shader = asciiShader;
+    initTexture();
+})
+
+// remove
+const asciiShader = new AsciiShader(device, canvasFormat);
+shader = asciiShader;
+// remove
 initTexture();
 
 

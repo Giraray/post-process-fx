@@ -1,4 +1,4 @@
-import ShaderObject from './shaderObject';
+import {ShaderObject, ProgramInstructions} from './shaderObject';
 import shaderCode from '../assets/shaders/crt.wgsl?raw'
 
 export default class CRTShader extends ShaderObject {
@@ -24,7 +24,7 @@ export default class CRTShader extends ShaderObject {
         });
     }
 
-    createBindings(time: number, width: number, height: number) {
+    createInstructions(time: number, width: number, height: number) {
         // create timeBuffer
         const timeBuffer = this.device.createBuffer({
             size: 8,
@@ -46,6 +46,17 @@ export default class CRTShader extends ShaderObject {
             {binding: 3, resource: { buffer: timeBuffer }},
         ];
 
-        return entries;
+        const instructions: ProgramInstructions = {
+            label: 'ASCII shader instructions',
+            passAmount: 1,
+            passes: [{
+                label: 'DoG',
+                passType: 'render',
+                pipeline: this.pipeline,
+                entries: entries,
+            }],
+        }
+
+        return instructions;
     }
 }

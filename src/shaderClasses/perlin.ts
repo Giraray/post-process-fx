@@ -1,6 +1,5 @@
 import perlinCode from '../assets/shaders/perlinNoise.wgsl?raw';
 import { perlinTextureConfig } from '../createConfig';
-import ShaderObject from './shaderObject'
 import TextureObject from './textureObject';
 
 interface Size {
