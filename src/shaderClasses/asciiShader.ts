@@ -1,6 +1,6 @@
 import asciiDogCode from '../assets/shaders/ascii/asciiDoG.wgsl?raw';
 import asciiSobelCode from '../assets/shaders/ascii/asciiSobel.wgsl?raw';
-import {ShaderObject, ProgramInstructions} from './shaderObject';
+import {ShaderObject, ProgramInstructions, ShaderProgram} from './shaderObject';
 
 export default class AsciiShader extends ShaderObject {
     canvasFormat: GPUTextureFormat; // YUUUUCK!!!!!!!!!!!!
@@ -66,12 +66,12 @@ export default class AsciiShader extends ShaderObject {
                     pipeline: this.pipeline,
                     entries: entries,
                 },
-                {
-                    label: 'sobel',
-                    passType: 'render',
-                    pipeline: sobelPipeline,
-                    entries: entries,
-                },
+                // {
+                //     label: 'sobel',
+                //     passType: 'render',
+                //     pipeline: sobelPipeline,
+                //     entries: entries,
+                // },
             ],
         }
 

@@ -23,7 +23,7 @@ struct VertexShaderOutput {
 
     var vsOutput: VertexShaderOutput;
     let xy = pos[vertexIndex];
-    vsOutput.position = vec4f(xy, 0.0, 1.0);
+    vsOutput.position = vec4f(xy.x, xy.y, 0.0, 1.0);
 
     vsOutput.fragUV = (xy + 1) / 2; // convert clip-space (-1 - 1) to UV (0 - 1)
     vsOutput.fragCoord = vsOutput.fragUV * uResolution;
@@ -38,7 +38,6 @@ struct VertexShaderOutput {
 
 const MATRIX_SIZE : i32 = 11;
 const KERNEL_SIZE : i32 = (MATRIX_SIZE - 1)/2;
-const pi : f32 = 3.141592653589793238;
 
 fn desaturate(color: vec3<f32>) -> vec4<f32> {
     var lum = vec3(0.299, 0.587, 0.114);
@@ -99,7 +98,7 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
     var DoG = desaturatedWBlur - desaturatedSBlur;
     
     // quantize
-    if(DoG.r < 0.015) {
+    if(DoG.r < 0.018) {
         DoG = vec4(0.0, 0.0, 0.0, 1.0);
     }
     else {

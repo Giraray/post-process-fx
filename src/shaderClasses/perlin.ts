@@ -410,7 +410,7 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
         if(this.shader) {
             const shader = this.shader;
 
-            shader.renderTarget = textureOutput;
+            shader.texture = textureOutput;
             shader.renderOnTimer({
                 size: {
                     width: this.size.width,

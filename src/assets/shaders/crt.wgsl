@@ -23,7 +23,7 @@ struct OurVertexShaderOutput {
 
     var vsOutput: OurVertexShaderOutput;
     let xy = pos[vertexIndex];
-    vsOutput.position = vec4f(xy, 0.0, 1.0);
+    vsOutput.position = vec4f(xy.x, -xy.y, 0.0, 1.0);
 
     vsOutput.fragUV = (xy + 1) / 2; // convert clip-space (-1 - 1) to UV (0 - 1)
     vsOutput.fragCoord = vsOutput.fragUV * uResolution;

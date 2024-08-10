@@ -41,14 +41,13 @@ export default class CRTShader extends ShaderObject {
 
         const entries = [
             {binding: 0, resource: this.sampler},
-            {binding: 1, resource: this.renderTarget.createView()},
+            {binding: 1, resource: this.texture.createView()},
             {binding: 2, resource: { buffer: resBuffer }},
             {binding: 3, resource: { buffer: timeBuffer }},
         ];
 
         const instructions: ProgramInstructions = {
             label: 'ASCII shader instructions',
-            passAmount: 1,
             passes: [{
                 label: 'DoG',
                 passType: 'render',

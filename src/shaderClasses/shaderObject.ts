@@ -15,7 +15,7 @@ type ShaderType =
     'render' |
     'compute'
 
-interface ShaderProgram {
+export interface ShaderProgram {
     label: string;
     passType: ShaderType;
     pipeline: GPURenderPipeline | GPUComputePipeline;
@@ -68,6 +68,12 @@ export abstract class ShaderObject {
         for(let i = 1; i <= instructions.passes.length; i++) {
             const shader = instructions.passes[i-1];
 
+            // if this shader is NOT the first operation, then use previously made textureOutput as 
+            // a render target
+            if(i-1 > 0) {
+                shader.entries[1].resource = textureOutput.createView();
+            }
+
             // if this shader is not the last operation, then create a new GPUTexture as an output 
             if(i < instructions.passes.length) {
                 const renderTarget = this.device.createTexture({
@@ -87,6 +93,7 @@ export abstract class ShaderObject {
 
             // if shader is a render shader, then do rendering stuff
             if(shader.passType === 'render') {
+
                 const pass = this.device.createCommandEncoder({
                     label: shader.label,
                 });

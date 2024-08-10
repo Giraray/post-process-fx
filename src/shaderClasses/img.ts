@@ -95,7 +95,7 @@ export class ImgTexture extends TextureObject {
         if(this.shader)
             flipped = false;
         device.queue.copyExternalImageToTexture(
-            {source: source, flipY: flipped},
+            {source: source, flipY: false},
             {texture: texture},
             {width: source.width, height: source.height},
         );
@@ -162,6 +162,7 @@ export class ImgTexture extends TextureObject {
             label: 'texEncoder',
         });
         const pass = textureEncoder.beginRenderPass({
+            label: 'defaultImg pass',
             colorAttachments: [{
                 view: textureOutput.createView(),
                 clearValue: [0, 0, 0, 1],

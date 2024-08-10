@@ -119,8 +119,8 @@ asciiSelect.addEventListener('click', function() {
 })
 
 // remove
-const asciiShader = new AsciiShader(device, canvasFormat);
-shader = asciiShader;
+// const asciiShader = new AsciiShader(device, canvasFormat);
+// shader = asciiShader;
 // remove
 initTexture();
 
