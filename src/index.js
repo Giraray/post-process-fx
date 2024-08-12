@@ -1,8 +1,10 @@
 // images
 import imgPath from './assets/sukunaiPadKid.jpg';
 import defaultImg from './assets/eliasoutsidewhoa.jpg';
+import circleImg from './assets/Red-Circle-PNG-Images-HD.png';
 
 // textures
+import TextureObject from './shaderClasses/textureObject.ts'
 import {PerlinTexture} from './shaderClasses/perlin.ts';
 import {ImgTexture} from './shaderClasses/img.ts';
 
@@ -11,7 +13,7 @@ import CRTShader from './shaderClasses/crtShader.ts'
 import AsciiShader from './shaderClasses/asciiShader.ts'
 
 if(!navigator.gpu) {
-    alert('WebGPU is not supported in this browser')
+    alert('WebGPU is currently only supported in Chromium based browsers.')
     throw new Error('WebGPU not supported on this browser');
 }
 const adapter = await navigator.gpu.requestAdapter();
@@ -31,16 +33,53 @@ context.configure({
 });
 
 // let's do this. *breaks fingers*
+
+/**
+ * The texture that is displayed onto the canvas through initTexture().
+ */
+let canvasTexture;
+
+// needs to be used in order to break animation intervals
 function detachTexture() {
-    if(texture.timeout) 
-        clearInterval(texture.timeout);
+    if(canvasTexture.timeout)
+        clearInterval(canvasTexture.timeout);
+    if(canvasTexture.shader != undefined && canvasTexture.shader.timeout)
+        clearInterval(canvasTexture.shader.timeout);
 }
 
-function initTexture() {
-    texture.setShader(shader);
-    texture.initConfig();
-    texture.resizeCanvas();
-    texture.renderToCanvas();
+function initTexture(newTexture) {
+    // newTexture is of type TextureObject (exists from before)
+    if(canvasTexture instanceof TextureObject) {
+
+        // both textures are of the same type
+        if(newTexture.constructor.name == canvasTexture.constructor.name) {
+
+            // if newTexture is the same as canvasTexture AND it does not have a source, do nothing
+            if(!Object.hasOwn(newTexture, 'source')) {
+                console.log('sorry, no source')
+                return;
+            }
+    
+            // if newTexture has a source that is the same as canvasTexture.source, then do nothing
+            if(newTexture.source == canvasTexture.source) {
+                console.log('sorry, same source')
+                return;
+            }
+        }
+    }
+
+    // otherwise, update texture
+    canvasTexture = newTexture;
+    canvasTexture.initConfig();
+    canvasTexture.resizeCanvas();
+    canvasTexture.renderToCanvas();
+
+    console.log('updated texture :)')
+}
+
+function initShader(shader) {
+    canvasTexture.setShader(shader);
+    canvasTexture.renderToCanvas();
 }
 
 function createImgTexture(source) {
@@ -55,10 +94,10 @@ async function loadTexture(url) {
     return source;
 }
 // default source
-const source = await loadTexture(defaultImg);
+const source = await loadTexture(circleImg);
 
 // default texture
-let texture = createImgTexture(source);
+const defaultTexture = createImgTexture(source);
 
 const divSize = {
     width: document.getElementById('imgDisp').clientWidth,
@@ -74,14 +113,14 @@ const perlinSelect = document.getElementById('perlinTexture');
 // elias texture
 defaultImgSelect.addEventListener('click', function() {
     detachTexture();
-    texture = new ImgTexture(device, canvasFormat, context, source);
-    initTexture();
+    const newTexture = new ImgTexture(device, canvasFormat, context, source);
+    initTexture(newTexture);
 })
 
 // perlin texture
 perlinSelect.addEventListener('click', function() {
     detachTexture();
-    texture = new PerlinTexture(device, canvasFormat, context, {
+    const newTexture = new PerlinTexture(device, canvasFormat, context, {
         size: divSize,
         seed: Math.random() * 100000,
         context,
@@ -92,7 +131,7 @@ perlinSelect.addEventListener('click', function() {
             animate: false,
         }
     });
-    initTexture();
+    initTexture(newTexture);
 });
 
 
@@ -102,42 +141,39 @@ perlinSelect.addEventListener('click', function() {
 const crtSelect = document.getElementById('crtShader');
 const asciiSelect = document.getElementById('asciiShader');
 
-let shader;
-
 // crt shader
 crtSelect.addEventListener('click', function() {
     const crtShader = new CRTShader(device, canvasFormat);
-    shader = crtShader;
-    initTexture();
+    const newShader = crtShader;
+    initShader(newShader);
 });
 
 // ascii shader
 asciiSelect.addEventListener('click', function() {
     const asciiShader = new AsciiShader(device, canvasFormat);
-    shader = asciiShader;
-    initTexture();
+    const newShader = asciiShader;
+    initShader(newShader);
 })
 
-// remove
-// const asciiShader = new AsciiShader(device, canvasFormat);
-// shader = asciiShader;
-// remove
-initTexture();
+initTexture(defaultTexture);
 
+// remove
+const asciiShader = new AsciiShader(device, canvasFormat);
+initShader(asciiShader);
+// remove
 
 // SAVE IMAGE
 const downloadBtn = document.getElementById('download');
 downloadBtn.onclick = function() {
-    downloadBtn.href = texture.dataUrl;
+    downloadBtn.href = canvasTexture.dataUrl;
 }
 
 // INSERT
 const insertBtn = document.getElementById('insertBtn');
-insertBtn.onchange = processInput;
+insertBtn.oninput = processInput;
 
 function processInput() {
     const file = insertBtn.files[0];
-    console.log(file)
     const reader = new FileReader();
     reader.readAsDataURL(file);
 
@@ -146,7 +182,7 @@ function processInput() {
         const blob = await res.blob();
         const source = await createImageBitmap(blob, {colorSpaceConversion: 'none'});
 
-        texture = createImgTexture(source);
-        initTexture();
+        const newTexture = createImgTexture(source);
+        initTexture(newTexture);
     }
 }

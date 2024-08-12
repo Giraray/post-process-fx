@@ -1,4 +1,4 @@
-import ShaderObject from './shaderObject'
+import {ShaderObject} from './shaderObject'
 
 export default class TextureObject {
     shader: ShaderObject | null;

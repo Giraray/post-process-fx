@@ -258,60 +258,38 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
                 break;
         }
 
+        const usage_UniformCopy = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
+
         // style
-        const styleBuffer = device.createBuffer({
-            size: 4,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
+        const styleBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
         device.queue.writeBuffer(styleBuffer, 0, new Int32Array([styleValue]));
 
         // resolution
-        const resBuffer = device.createBuffer({
-            size:8,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
+        const resBuffer = device.createBuffer({size:8,usage: usage_UniformCopy});
         device.queue.writeBuffer(resBuffer, 0, new Float32Array([this.size.width, this.size.height]));
 
         // seed
-        const seedBuffer = device.createBuffer({
-            size: 4,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
+        const seedBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
         device.queue.writeBuffer(seedBuffer, 0, new Float32Array([this.seed]));
 
         // gridSize
-        const gridBuffer = device.createBuffer({
-            size: 4,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
+        const gridBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
         device.queue.writeBuffer(gridBuffer, 0, new Float32Array([this.config.gridSize]));
 
         // intensity
-        const intensityBuffer = device.createBuffer({
-            size: 4,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
+        const intensityBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
         device.queue.writeBuffer(intensityBuffer, 0, new Float32Array([this.config.intensity]));
 
         // time
-        const timeBuffer = device.createBuffer({
-            size: 4,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
+        const timeBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
         device.queue.writeBuffer(timeBuffer, 0, new Float32Array([this.time]));
 
         // speed
-        const speedBuffer = device.createBuffer({
-            size: 4,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
+        const speedBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
         device.queue.writeBuffer(speedBuffer, 0, new Float32Array([this.config.speed]));
 
         // fractals
-        const fractalsBuffer = device.createBuffer({
-            size: 4,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
+        const fractalsBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
         device.queue.writeBuffer(fractalsBuffer, 0, new Float32Array([this.config.fractals]));
 
         this.bindGroup = device.createBindGroup({
@@ -418,7 +396,6 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
                 },
                 canvasFormat: this.canvasFormat,
                 context: this.context,
-                finalRender: true,
             });
         }
 

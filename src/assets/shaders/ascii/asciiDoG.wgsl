@@ -23,7 +23,7 @@ struct VertexShaderOutput {
 
     var vsOutput: VertexShaderOutput;
     let xy = pos[vertexIndex];
-    vsOutput.position = vec4f(xy.x, xy.y, 0.0, 1.0);
+    vsOutput.position = vec4f(xy.x, -xy.y, 0.0, 1.0);
 
     vsOutput.fragUV = (xy + 1) / 2; // convert clip-space (-1 - 1) to UV (0 - 1)
     vsOutput.fragCoord = vsOutput.fragUV * uResolution;
@@ -84,7 +84,7 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
 
     //
     // 2. DoG
-    var sigmaSubtract = 4.0;
+    var sigmaSubtract = 1.0;
     var sigmaBase = 1.5;
 
     var strongBlur = blur(fragCoord, sigmaSubtract);
@@ -98,7 +98,7 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
     var DoG = desaturatedWBlur - desaturatedSBlur;
     
     // quantize
-    if(DoG.r < 0.018) {
+    if(DoG.r < 0.017) {
         DoG = vec4(0.0, 0.0, 0.0, 1.0);
     }
     else {

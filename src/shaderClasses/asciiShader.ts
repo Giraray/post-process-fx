@@ -1,5 +1,7 @@
 import asciiDogCode from '../assets/shaders/ascii/asciiDoG.wgsl?raw';
 import asciiSobelCode from '../assets/shaders/ascii/asciiSobel.wgsl?raw';
+import asciiDownscaleCode from '../assets/shaders/ascii/asciiDownscale.wgsl?raw';
+import asciiConvertCode from '../assets/shaders/ascii/asciiConvert.wgsl?raw';
 import {ShaderObject, ProgramInstructions, ShaderProgram} from './shaderObject';
 
 export default class AsciiShader extends ShaderObject {
@@ -57,6 +59,54 @@ export default class AsciiShader extends ShaderObject {
             }
         });
 
+        // DOWNSCALE
+        const downscaleShaderModule = this.device.createShaderModule({
+            label: 'downscale',
+            code: asciiDownscaleCode,
+        });
+
+        const downscalePipeline = this.device.createComputePipeline({
+            layout: 'auto',
+            compute: {
+                module: downscaleShaderModule,
+                entryPoint: 'main',
+            },
+        });
+
+        // buffer
+        const resultBuffer = this.device.createTexture({
+            size: {width,height},
+            format: 'rgba8unorm',
+            usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
+        });
+
+        const downscaleEntries = [
+            {binding: 0, resource: resultBuffer.createView()},
+            {binding: 1, resource: this.texture.createView()},
+        ];
+
+        // FINALIZE
+        const finalizeModule = this.device.createShaderModule({
+            label: 'ascii finalize',
+            code: asciiConvertCode,
+        })
+
+        const finalizePipeline = this.device.createRenderPipeline({
+            layout: 'auto',
+            vertex: {
+                module: finalizeModule,
+            },
+            fragment: {
+                module: finalizeModule,
+                targets: [{format: this.canvasFormat}],
+            },
+        });
+
+        const finalizeEntries = [
+            {binding: 0, resource: this.sampler},
+            {binding: 1, resource: resultBuffer.createView()},
+        ];
+
         const instructions: ProgramInstructions = {
             label: 'ASCII shader instructions',
             passes: [
@@ -66,12 +116,25 @@ export default class AsciiShader extends ShaderObject {
                     pipeline: this.pipeline,
                     entries: entries,
                 },
-                // {
-                //     label: 'sobel',
-                //     passType: 'render',
-                //     pipeline: sobelPipeline,
-                //     entries: entries,
-                // },
+                {
+                    label: 'sobel',
+                    passType: 'render',
+                    pipeline: sobelPipeline,
+                    entries: entries,
+                },
+                {
+                    label: 'downscale',
+                    passType: 'compute',
+                    pipeline: downscalePipeline,
+                    entries: downscaleEntries,
+                    workgroupSize: 8,
+                },
+                {
+                    label: 'ascii finalize',
+                    passType: 'render',
+                    pipeline: finalizePipeline,
+                    entries: finalizeEntries,
+                },
             ],
         }
 

@@ -23,7 +23,7 @@ struct VertexShaderOutput {
 
     var vsOutput: VertexShaderOutput;
     let xy = pos[vertexIndex];
-    vsOutput.position = vec4f(xy, 0.0, 1.0);
+    vsOutput.position = vec4f(xy.x, -xy.y, 0.0, 1.0);
 
     vsOutput.fragUV = (xy + 1) / 2; // convert clip-space (-1 - 1) to UV (0 - 1)
     vsOutput.fragCoord = vsOutput.fragUV * uResolution;
@@ -48,11 +48,12 @@ fn getFragLuma(offsetUV: vec2<f32>) -> f32 {
     var uv = fsInput.fragUV;
     //
     // 3. sobel gradients
-    var stepx = 0.8 / uResolution.x;
-    var stepy = 0.8 / uResolution.y;
+    var stepValue = 0.7;
+    var stepx = stepValue / uResolution.x;
+    var stepy = stepValue / uResolution.y;
 
-    var kernel1 = 0.1;
-    var kernel2 = 1.0; // ?
+    var kernel1 = 1.0;
+    var kernel2 = 2.0; // ?
 
     var horizontalSobelMatrix = array<f32, 9>(
         -kernel1, 0.0, kernel1,
@@ -107,7 +108,7 @@ fn getFragLuma(offsetUV: vec2<f32>) -> f32 {
     var c = vec3(0.0);
     var red = vec3(1.0,0.0,0.0);
     var green = vec3(0.0,1.0,0.0);
-    var blue = vec3(0.0,0.5,1.0);
+    var blue = vec3(0.0,0.0,1.0);
     var yellow = vec3(1.0,1.0,0.0);
 
     var div = 1.0/8.0;
@@ -122,14 +123,14 @@ fn getFragLuma(offsetUV: vec2<f32>) -> f32 {
         theta = floor(theta * 8.0) / 8.0;
 
         // vertical lines
-        if(theta == div * 0.0) {
+        if(theta == div * 8.0) {
             c = red;
         }
         if(theta == div * 4.0) {
             c = red;
         }
 
-        // backslash
+        // forward slash
         if(theta == div * 1.0) {
             c = green;
         }
@@ -137,7 +138,7 @@ fn getFragLuma(offsetUV: vec2<f32>) -> f32 {
             c = green;
         }
 
-        // forward slash
+        // backslash
         if(theta == div * 3.0) {
             c = yellow;
         }
@@ -152,20 +153,6 @@ fn getFragLuma(offsetUV: vec2<f32>) -> f32 {
         if(theta == div * 6.0) {
             c = blue;
         }
-        
-
-        // if(theta == div * 0.0 || theta == div * 4.0) {
-        //     c = vec3(1.0, 0.0, 0.0);
-        // }
-        // else if(theta == div * 1.0 || theta == div * 5.0) {
-        //     c = vec3(0.0, 1.0, 0.0);
-        // }
-        // else if(theta == div * 2.0 || theta == div * 6.0) {
-        //     c = vec3(0.0, 0.0, 1.0);
-        // }
-        // else if(theta == div * 3.0 || theta == div * 7.0) {
-        //     c = vec3(1.0, 1.0, 1.0);
-        // }
     }
 
         return vec4(c, 1.0);

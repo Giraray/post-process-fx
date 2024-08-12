@@ -20,6 +20,7 @@ export interface ShaderProgram {
     passType: ShaderType;
     pipeline: GPURenderPipeline | GPUComputePipeline;
     entries: Array<GPUBindGroupEntry>;
+    workgroupSize?: number;
 }
 
 export interface ProgramInstructions {
@@ -51,18 +52,6 @@ export abstract class ShaderObject {
     abstract createInstructions(...args: any): ProgramInstructions;
 
     render(options: RenderDescriptor) {
-
-        if(options.finalRender === true && !options.context) {
-            const e = new Error('Cannot render to canvas without context. Context must be specified if finalRender is True.');
-            e.name = 'RenderError'
-            throw e;
-        }
-        if(options.finalRender === false && !options.renderTarget) {
-            const e = new Error('Missing render target. Render target must be specified if finalRender is false.');
-            e.name = 'RenderError'
-            throw e;
-        }
-
         let textureOutput: GPUTexture;
         const instructions = this.createInstructions(this.time, options.size.width, options.size.height);
         for(let i = 1; i <= instructions.passes.length; i++) {
@@ -70,7 +59,7 @@ export abstract class ShaderObject {
 
             // if this shader is NOT the first operation, then use previously made textureOutput as 
             // a render target
-            if(i-1 > 0) {
+            if(i-1 > 0 && instructions.passes[i-2].passType != 'compute') {
                 shader.entries[1].resource = textureOutput.createView();
             }
 
@@ -116,6 +105,24 @@ export abstract class ShaderObject {
                 renderPass.end();
                 
                 this.device.queue.submit([pass.finish()]);
+            }
+            else if(shader.passType = 'compute') {
+                const pass = this.device.createCommandEncoder({
+                    label: shader.label,
+                });
+                const bindGroup = this.device.createBindGroup({
+                    layout: shader.pipeline.getBindGroupLayout(0),
+                    entries: shader.entries,
+                });
+                const computePass = pass.beginComputePass();
+                computePass.setPipeline(<GPUComputePipeline>shader.pipeline);
+                computePass.setBindGroup(0, bindGroup);
+
+                const w = options.size.width;
+                const h = options.size.height;
+
+                computePass.dispatchWorkgroups(Math.ceil(w/8), Math.ceil(h/8), 1);
+                computePass.end();
             }
         }
     }

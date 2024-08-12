@@ -29,7 +29,7 @@ export class ImgTexture extends TextureObject {
         this.sizeMultiplier = {width: 1,height: 1,};
         this.source = source;
 
-        this.resizeDimensions(true);
+        this.resizeDimensions(false);
     }
 
     resizeDimensions(resize: boolean) {
@@ -72,6 +72,9 @@ export class ImgTexture extends TextureObject {
         resizeElm.addEventListener('change', function(event) {
             let value = (event.target as HTMLInputElement).checked === true ? true : false;
             self.resize = value;
+
+            self.resizeDimensions(value);
+            self.resizeCanvas();
 
             self.renderToCanvas();
         });
