@@ -29,7 +29,7 @@ export class ImgTexture extends TextureObject {
         this.sizeMultiplier = {width: 1,height: 1,};
         this.source = source;
 
-        this.resizeDimensions(false);
+        this.resizeDimensions(true);
     }
 
     resizeDimensions(resize: boolean) {
@@ -183,9 +183,8 @@ export class ImgTexture extends TextureObject {
         // RENDER SHADER (if exists)
         if(this.shader) {
             const shader = this.shader;
-
             shader.texture = textureOutput;
-            shader.renderOnTimer({
+            shader.render({
                 size: {
                     width: this.size.width,
                     height: this.size.height,

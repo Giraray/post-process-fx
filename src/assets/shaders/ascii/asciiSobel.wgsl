@@ -112,11 +112,10 @@ fn getFragLuma(offsetUV: vec2<f32>) -> f32 {
     var yellow = vec3(1.0,1.0,0.0);
 
     var div = 1.0/8.0;
-    var theta = 3.0;
 
     if(g > 0.0) {
         // get gradient vector
-        theta = atan2(gy, gx);
+        var theta = atan2(gy, gx);
         theta = (theta/PI) * 0.5 + 0.5;
 
         // quantize theta

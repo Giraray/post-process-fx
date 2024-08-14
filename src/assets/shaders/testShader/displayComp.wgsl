@@ -1,7 +1,5 @@
-@group(0) @binding(0) var uSampler : sampler;
-@group(0) @binding(1) var colorBuffer : texture_2d<f32>;
-@group(0) @binding(2) var bitmap : texture_2d<f32>;
-@group(0) @binding(3) var bitmapEdge : texture_2d<f32>;
+@group(0) @binding(0) var screen_sampler : sampler;
+@group(0) @binding(1) var color_buffer : texture_2d<f32>;
 
 struct VertexOutput {
     @builtin(position) Position : vec4<f32>,
@@ -9,7 +7,9 @@ struct VertexOutput {
 }
 
 @vertex
-fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
+fn vertexMain(
+    @builtin(vertex_index) VertexIndex : u32
+    ) -> VertexOutput {
 
     var positions = array<vec2<f32>, 6>(
         vec2<f32>( 1.0,  1.0),
@@ -36,7 +36,7 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
 }
 
 @fragment
-fn frag_main(@location(0) TexCoord : vec2<f32>) -> @location(0) vec4<f32> {
-    var color = textureSample(colorBuffer, uSampler, TexCoord);
+fn fragMain(@location(0) TexCoord : vec2<f32>) -> @location(0) vec4<f32> {
+    var color = textureSample(color_buffer, screen_sampler, TexCoord);
     return color;
 }

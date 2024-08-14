@@ -11,6 +11,7 @@ bugs and low priority stuff:
 - ImgTexture needs Resize option.
 - PerlinTexture should have billowRidge style.
 - Texture config interfaces are not needed, and config values are weird in the constructor.
+- Clean up render() in ShaderObject.
 
 big picture plans:
 - whole ass UI overhaul

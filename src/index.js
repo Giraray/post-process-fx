@@ -11,6 +11,7 @@ import {ImgTexture} from './shaderClasses/img.ts';
 // shaders
 import CRTShader from './shaderClasses/crtShader.ts'
 import AsciiShader from './shaderClasses/asciiShader.ts'
+import TestShader from './shaderClasses/test.ts'
 
 if(!navigator.gpu) {
     alert('WebGPU is currently only supported in Chromium based browsers.')

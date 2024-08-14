@@ -1,3 +1,6 @@
+import computeCode from '../assets/shaders/testShader/compute.wgsl?raw';
+import displayCompCode from '../assets/shaders/testShader/displayComp.wgsl?raw'; // remove
+
 interface Size {
     width: number,
     height: number,
@@ -29,6 +32,7 @@ export interface ProgramInstructions {
 }
 
 export abstract class ShaderObject {
+    canvasFormat: GPUTextureFormat; // YUUUUCK!!!!!!!!!!!!
     code: string;
     shaderModule: GPUShaderModule;
     pipeline: GPURenderPipeline;
@@ -42,53 +46,75 @@ export abstract class ShaderObject {
     readonly device: GPUDevice;
     readonly sampler: GPUSampler;
 
-    constructor(device: GPUDevice) {
+    constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
         this.device = device;
-        this.sampler = device.createSampler();
+        this.canvasFormat = canvasFormat;
+
+        this.sampler = device.createSampler({
+            magFilter: 'linear',
+            minFilter: 'linear',
+        });
         this.time = 0;
         this.lastUpdate = Date.now();
     }
 
     abstract createInstructions(...args: any): ProgramInstructions;
 
+    /**
+     * This is easily the ugliest function I have ever had the displeasure of writing.
+     * I am so sorry, future me.
+     * @param options
+     */
     render(options: RenderDescriptor) {
+        const w = options.size.width;
+        const h = options.size.height;
         let textureOutput: GPUTexture;
+        let pass: GPUCommandEncoder;
+
         const instructions = this.createInstructions(this.time, options.size.width, options.size.height);
+
         for(let i = 1; i <= instructions.passes.length; i++) {
             const shader = instructions.passes[i-1];
 
             // if this shader is NOT the first operation, then use previously made textureOutput as 
             // a render target
             if(i-1 > 0 && instructions.passes[i-2].passType != 'compute') {
-                shader.entries[1].resource = textureOutput.createView();
+                shader.entries[1].resource = textureOutput.createView({
+                    label: textureOutput.label + '_view'
+                });
             }
 
-            // if this shader is not the last operation, then create a new GPUTexture as an output 
-            if(i < instructions.passes.length) {
-                const renderTarget = this.device.createTexture({
-                    label: 'texA placeholder',
-                    format: options.canvasFormat,
-                    size: [options.size.width, options.size.height],
-                    usage: 
-                        GPUTextureUsage.TEXTURE_BINDING |
-                        GPUTextureUsage.RENDER_ATTACHMENT |
-                        GPUTextureUsage.COPY_SRC
-                });
-                textureOutput = renderTarget
+            if(i-1 > 0 && instructions.passes[i-2].passType == 'compute') {
+                // if this pass follows a compute pass, then dont create another commandEncoder.
+                // do nothing
             }
             else {
-                textureOutput = options.context.getCurrentTexture();
+                pass = this.device.createCommandEncoder();
             }
 
-            // if shader is a render shader, then do rendering stuff
             if(shader.passType === 'render') {
 
-                const pass = this.device.createCommandEncoder({
-                    label: shader.label,
-                });
+                // if this shader is not the last operation, then create a new GPUTexture as an output 
+                if(i < instructions.passes.length) {
+                    const renderTarget = this.device.createTexture({
+                        label: 'texA placeholder',
+                        format: options.canvasFormat,
+                        size: [options.size.width, options.size.height],
+                        usage: 
+                            GPUTextureUsage.TEXTURE_BINDING |
+                            GPUTextureUsage.RENDER_ATTACHMENT |
+                            GPUTextureUsage.COPY_DST
+                    });
+                    textureOutput = renderTarget
+                }
+
+                else {
+                    textureOutput = options.context.getCurrentTexture();
+                }
+
                 const bindGroup = this.device.createBindGroup({
                     layout: shader.pipeline.getBindGroupLayout(0),
-                    entries: shader.entries
+                    entries: shader.entries,
                 });
                 const renderPass = pass.beginRenderPass({
                     colorAttachments: [{
@@ -106,10 +132,8 @@ export abstract class ShaderObject {
                 
                 this.device.queue.submit([pass.finish()]);
             }
+            // compute stuff
             else if(shader.passType = 'compute') {
-                const pass = this.device.createCommandEncoder({
-                    label: shader.label,
-                });
                 const bindGroup = this.device.createBindGroup({
                     layout: shader.pipeline.getBindGroupLayout(0),
                     entries: shader.entries,
@@ -118,10 +142,7 @@ export abstract class ShaderObject {
                 computePass.setPipeline(<GPUComputePipeline>shader.pipeline);
                 computePass.setBindGroup(0, bindGroup);
 
-                const w = options.size.width;
-                const h = options.size.height;
-
-                computePass.dispatchWorkgroups(Math.ceil(w/8), Math.ceil(h/8), 1);
+                computePass.dispatchWorkgroups(Math.ceil(w/shader.workgroupSize), Math.ceil(h/shader.workgroupSize), 1);
                 computePass.end();
             }
         }
