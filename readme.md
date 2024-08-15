@@ -3,6 +3,9 @@ A silly website to showcase silly shaders
 todo:
 - ASCII shader (30% done)
 
+high priority fixes!!:
+- Animated textures do not animate when a shader is applied
+- Shaders should persist upon texture change when it has not been deselected
 
 bugs and low priority stuff:
 - Application of shaders persists upon initTexture() when the shader has been removed from texture.
