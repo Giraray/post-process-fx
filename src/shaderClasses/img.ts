@@ -29,7 +29,7 @@ export class ImgTexture extends TextureObject {
         this.sizeMultiplier = {width: 1,height: 1,};
         this.source = source;
 
-        this.resizeDimensions(true);
+        this.resizeDimensions(false);
     }
 
     resizeDimensions(resize: boolean) {
@@ -164,6 +164,7 @@ export class ImgTexture extends TextureObject {
         const textureEncoder = this.device.createCommandEncoder({
             label: 'texEncoder',
         });
+
         const pass = textureEncoder.beginRenderPass({
             label: 'defaultImg pass',
             colorAttachments: [{

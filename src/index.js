@@ -95,7 +95,7 @@ async function loadTexture(url) {
     return source;
 }
 // default source
-const source = await loadTexture(circleImg);
+const source = await loadTexture(defaultImg);
 
 // default texture
 const defaultTexture = createImgTexture(source);

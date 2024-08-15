@@ -84,8 +84,8 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
 
     //
     // 2. DoG
-    var sigmaSubtract = 1.0;
-    var sigmaBase = 1.5;
+    var sigmaSubtract = 4.0;
+    var sigmaBase = 2.3;
 
     var strongBlur = blur(fragCoord, sigmaSubtract);
     var weakBlur = blur(fragCoord, sigmaBase);

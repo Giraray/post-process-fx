@@ -6,7 +6,7 @@ const red = vec3(1.0,0.0,0.0);
 const green = vec3(0.0,1.0,0.0);
 const blue = vec3(0.0,0.0,1.0);
 
-const threshold: f32 = 9.0;
+const threshold: f32 = 10.0;
 
 @compute @workgroup_size(8,8,1)
 fn main(
