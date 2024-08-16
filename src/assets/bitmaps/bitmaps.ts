@@ -64,6 +64,23 @@ export const bitmapVer4_Data: Bitmap = {
     data: dataToArray(bitmapVer4_String, bitmapVer4_Resolution),
 }
 
+const bitmapVer5_Resolution = 80*8*4;
+const bitmapVer5_String = `
+________________________________________________________________________________
+___________________________________________________OO______OO_____OOOO__OOOOOOO_
+___________________________________OO_____O_______O__O____O__OO__O____O_OOOOOOO_
+___________________O_______O______O__O____O_______O_________OOO__O_OOOO_OOOOOOO_
+__________________________OOO_____O_______OOO_____O________O_____O__OO__OOOOOOO_
+___________________________O______O__O____O__O____O__O____________O_____OOOOOOO_
+___________O_______O_______________OO_____O__O_____OO______O_______OO___OOOOOOO_
+________________________________________________________________________________
+`;
+
+export const bitmapVer5_Data: Bitmap = {
+    size: {width: 80, height: 8},
+    data: dataToArray(bitmapVer5_String, bitmapVer5_Resolution),
+}
+
 
 
 

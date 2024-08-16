@@ -4,7 +4,7 @@ import asciiDownscaleCode from '../assets/shaders/ascii/asciiDownscale.wgsl?raw'
 import asciiConvertCode from '../assets/shaders/ascii/asciiConvert.wgsl?raw';
 import {ShaderObject, ProgramInstructions, ShaderProgram} from './shaderObject';
 
-import {Bitmap, bitmapVer3_Data, bitmapEdgeVer1_Data, bitmapVer4_Data } from '../assets/bitmaps/bitmaps';
+import {Bitmap, bitmapVer3_Data, bitmapEdgeVer1_Data, bitmapVer4_Data, bitmapVer5_Data } from '../assets/bitmaps/bitmaps';
 
 export default class AsciiShader extends ShaderObject {
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
@@ -61,7 +61,7 @@ export default class AsciiShader extends ShaderObject {
         this.device.queue.writeBuffer(resBuffer, 0, new Float32Array([width, height]));
 
         // bitmaps
-        const bitmap = this.createBitmap(bitmapVer4_Data);
+        const bitmap = this.createBitmap(bitmapVer5_Data);
         const bitmapEdge = this.createBitmap(bitmapEdgeVer1_Data);
 
         // DoG

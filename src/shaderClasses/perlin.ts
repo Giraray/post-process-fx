@@ -25,7 +25,8 @@ interface PerlinConfig {
 type StyleOptions =
     | 'fractal'
     | 'natural'
-    | 'normalized';
+    | 'normalized'
+    | 'billowRidge';
 
 interface PerlinOptions {
     config?: PerlinConfig;
@@ -252,9 +253,12 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
             case 'normalized':
                 styleValue = 2;
                 break;
+            case 'billowRidge':
+                styleValue = 3;
+                break;
             case 'natural':
             default:
-                styleValue = 3;
+                styleValue = 4;
                 break;
         }
 

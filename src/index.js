@@ -50,8 +50,13 @@ function detachTexture() {
 
 function initTexture(newTexture) {
     // newTexture is of type TextureObject (exists from before)
+    let keepShader = false;
     if(canvasTexture instanceof TextureObject) {
         detachTexture();
+
+        if(canvasTexture.shader != undefined) {
+            keepShader = canvasTexture.shader;
+        }
 
         // both textures are of the same type
         if(newTexture.constructor.name == canvasTexture.constructor.name) {
@@ -72,6 +77,11 @@ function initTexture(newTexture) {
 
     // otherwise, update texture
     canvasTexture = newTexture;
+
+    if(keepShader != false) {
+        initShader(keepShader);
+    }
+
     canvasTexture.initConfig();
     canvasTexture.resizeCanvas();
     canvasTexture.renderToCanvas();

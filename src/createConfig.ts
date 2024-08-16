@@ -18,6 +18,7 @@ export const perlinTextureConfig: string = `
             <option value="natural">Natural</option>
             <option value="fractal">Fractal</option>
             <option value="normalized">Normalized</option>
+            <option value="billowRidge">Billow ridge</option>
         </select>
     </div>
 
