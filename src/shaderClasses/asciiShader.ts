@@ -4,7 +4,7 @@ import asciiDownscaleCode from '../assets/shaders/ascii/asciiDownscale.wgsl?raw'
 import asciiConvertCode from '../assets/shaders/ascii/asciiConvert.wgsl?raw';
 import {ShaderObject, ProgramInstructions, ShaderProgram} from './shaderObject';
 
-import {bitmapVer3Data, bitmapEdgeVer1Data} from '../assets/bitmaps/bitmaps';
+import {Bitmap, bitmapVer3_Data, bitmapEdgeVer1_Data, bitmapVer4_Data } from '../assets/bitmaps/bitmaps';
 
 export default class AsciiShader extends ShaderObject {
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
@@ -25,6 +25,25 @@ export default class AsciiShader extends ShaderObject {
         });
     }
 
+    createBitmap(data: Bitmap): GPUTexture {
+        const bitmap = this.device.createTexture({
+            label: 'bitmap',
+            format: 'rgba8unorm',
+            size: data.size,
+            usage: 
+                GPUTextureUsage.COPY_DST |
+                GPUTextureUsage.TEXTURE_BINDING |
+                GPUTextureUsage.RENDER_ATTACHMENT,
+        });
+        this.device.queue.writeTexture(
+            {texture: bitmap},
+            data.data,
+            {bytesPerRow: data.size.width * 4},
+            {width: data.size.width, height: data.size.height},
+        );
+        return bitmap;
+    }
+
     createInstructions(time: number, width: number, height: number): ProgramInstructions {
         // buffer for compute
         const colorBuffer = this.device.createTexture({
@@ -42,37 +61,8 @@ export default class AsciiShader extends ShaderObject {
         this.device.queue.writeBuffer(resBuffer, 0, new Float32Array([width, height]));
 
         // bitmaps
-        const bitmapVer3 = this.device.createTexture({
-            label: 'ASCII bitmap ver3',
-            format: 'rgba8unorm',
-            size: bitmapVer3Data.size,
-            usage: 
-                GPUTextureUsage.COPY_DST |
-                GPUTextureUsage.TEXTURE_BINDING |
-                GPUTextureUsage.RENDER_ATTACHMENT,
-        });
-        this.device.queue.writeTexture(
-            {texture: bitmapVer3},
-            bitmapVer3Data.data,
-            {bytesPerRow: bitmapVer3Data.size.width * 4},
-            {width: bitmapVer3Data.size.width, height: bitmapVer3Data.size.height},
-        );
-
-        const bitmapEdgeVer1 = this.device.createTexture({
-            label: 'ASCII bitmap ver3',
-            format: 'rgba8unorm',
-            size: bitmapEdgeVer1Data.size,
-            usage: 
-                GPUTextureUsage.COPY_DST |
-                GPUTextureUsage.TEXTURE_BINDING |
-                GPUTextureUsage.RENDER_ATTACHMENT,
-        });
-        this.device.queue.writeTexture(
-            {texture: bitmapEdgeVer1},
-            bitmapEdgeVer1Data.data,
-            {bytesPerRow: bitmapEdgeVer1Data.size.width * 4},
-            {width: bitmapEdgeVer1Data.size.width, height: bitmapEdgeVer1Data.size.height},
-        );
+        const bitmap = this.createBitmap(bitmapVer4_Data);
+        const bitmapEdge = this.createBitmap(bitmapEdgeVer1_Data);
 
         // DoG
         const entries = [
@@ -136,8 +126,8 @@ export default class AsciiShader extends ShaderObject {
         const finalizeEntries = [
             {binding: 0, resource: this.sampler},
             {binding: 1, resource: colorBuffer.createView()},
-            {binding: 2, resource: bitmapVer3.createView()},
-            {binding: 3, resource: bitmapEdgeVer1.createView()},
+            {binding: 2, resource: bitmap.createView()},
+            {binding: 3, resource: bitmapEdge.createView()},
             {binding: 4, resource: this.texture.createView()},
             {binding: 5, resource: {buffer: resBuffer}},
         ];

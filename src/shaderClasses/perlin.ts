@@ -154,7 +154,7 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
             this.time -= delta/1000;
 
             requestAnimationFrame(this.renderToCanvas.bind(this));
-        }, 1000 / 60);
+        }, 1000 / 30);
     }
 
     // create texture
@@ -387,16 +387,23 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
         // RENDER SHADER (if exists)
         if(this.shader) {
             const shader = this.shader;
-
-            shader.texture = textureOutput;
-            shader.renderOnTimer({
+            const renderOptions = {
                 size: {
                     width: this.size.width,
                     height: this.size.height,
                 },
                 canvasFormat: this.canvasFormat,
                 context: this.context,
-            });
+            }
+
+            shader.texture = textureOutput;
+
+            if(this.shader.static == true) {
+                shader.render(renderOptions);
+            }
+            else{
+                shader.renderOnTimer(renderOptions);
+            }
         }
 
         this.dataUrl = (<HTMLCanvasElement>this.context.canvas).toDataURL('image/png');

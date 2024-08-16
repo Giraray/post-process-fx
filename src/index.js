@@ -51,6 +51,7 @@ function detachTexture() {
 function initTexture(newTexture) {
     // newTexture is of type TextureObject (exists from before)
     if(canvasTexture instanceof TextureObject) {
+        detachTexture();
 
         // both textures are of the same type
         if(newTexture.constructor.name == canvasTexture.constructor.name) {
@@ -113,14 +114,12 @@ const perlinSelect = document.getElementById('perlinTexture');
 
 // elias texture
 defaultImgSelect.addEventListener('click', function() {
-    detachTexture();
     const newTexture = new ImgTexture(device, canvasFormat, context, source);
     initTexture(newTexture);
 })
 
 // perlin texture
 perlinSelect.addEventListener('click', function() {
-    detachTexture();
     const newTexture = new PerlinTexture(device, canvasFormat, context, {
         size: divSize,
         seed: Math.random() * 100000,

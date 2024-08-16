@@ -43,12 +43,15 @@ export abstract class ShaderObject {
     time: number;
     lastUpdate: number;
 
+    readonly static: boolean;
     readonly device: GPUDevice;
     readonly sampler: GPUSampler;
 
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
         this.device = device;
         this.canvasFormat = canvasFormat;
+
+        this.static = false;
 
         this.sampler = device.createSampler({
             magFilter: 'linear',
@@ -158,6 +161,6 @@ export abstract class ShaderObject {
             this.time -= delta/1000;
 
             requestAnimationFrame(this.render.bind(this, options));
-        }, 1000 / 10);
+        }, 1000 / 30);
     }
 }
