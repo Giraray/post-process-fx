@@ -68,6 +68,8 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
             this.config.speed = 1;
         if(!this.config.fractals)
             this.config.fractals = 5;
+
+        this.initConfig();
     }
 
     initConfig() {
@@ -373,7 +375,7 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
             label: 'texEncoder',
         });
         const pass = textureEncoder.beginRenderPass({
-            colorAttachments: [{
+            colorAttachments: [<GPURenderPassColorAttachment>{
                 view: textureOutput.createView(),
                 clearValue: [0, 0, 0, 1],
                 loadOp: 'clear',

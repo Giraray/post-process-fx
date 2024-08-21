@@ -1,25 +1,30 @@
 import shaderCode from '../assets/shaders/defaultShader.wgsl?raw';
 import TextureObject from './textureObject';
 import { imgTextureConfig } from '../createConfig';
+import {NumberConfig, EnumConfig, BoolConfig, RangeConfig} from './objectBase';
 
 interface Size {
     width: number,
     height: number,
 }
 
+interface ImgTextureConfig {
+    resize: BoolConfig;
+}
+
 export class ImgTexture extends TextureObject {
 
     size: Size;
-    canvasFormat: GPUTextureFormat;
-    device: GPUDevice;
+    readonly canvasFormat: GPUTextureFormat;
+    readonly device: GPUDevice;
     source: ImageBitmap;
     container: HTMLDivElement;
     sizeMultiplier: Size;
 
-    resize: boolean;
-
     bindGroup: GPUBindGroup;
     pipeline: GPURenderPipeline;
+
+    resize: BoolConfig;
 
     constructor(
         device: GPUDevice, canvasFormat: GPUTextureFormat, context: GPUCanvasContext, source: ImageBitmap
@@ -29,7 +34,25 @@ export class ImgTexture extends TextureObject {
         this.sizeMultiplier = {width: 1,height: 1,};
         this.source = source;
 
-        this.resizeDimensions(true);
+        this.config = this.createConfig();
+        this.resize = <BoolConfig>this.config[0];
+
+        this.resizeDimensions(this.resize.value);
+        this.initConfig();
+        // this.initTextureConfig(this.config); // there has to be a better way...
+    }
+
+    createConfig(): [BoolConfig] {
+        const resize: BoolConfig = {
+            type: 'bool',
+            label: 'Resize',
+            id: 'resize',
+            title: 'Resizes the image to fit the container',
+            
+            default: true,
+            value: true,
+        };
+        return [resize];
     }
 
     resizeDimensions(resize: boolean) {
@@ -71,7 +94,7 @@ export class ImgTexture extends TextureObject {
         // resize
         resizeElm.addEventListener('change', function(event) {
             let value = (event.target as HTMLInputElement).checked === true ? true : false;
-            self.resize = value;
+            self.resize.value = value;
 
             self.resizeDimensions(value);
             self.resizeCanvas();
@@ -167,7 +190,7 @@ export class ImgTexture extends TextureObject {
 
         const pass = textureEncoder.beginRenderPass({
             label: 'defaultImg pass',
-            colorAttachments: [{
+            colorAttachments: [<GPURenderPassColorAttachment>{
                 view: textureOutput.createView(),
                 clearValue: [0, 0, 0, 1],
                 loadOp: 'clear',
@@ -184,8 +207,7 @@ export class ImgTexture extends TextureObject {
         // RENDER SHADER (if exists)
         if(this.shader) {
             const shader = this.shader;
-            shader.texture = textureOutput;
-            shader.renderOnTimer({
+            const renderOptions = {
                 size: {
                     width: this.size.width,
                     height: this.size.height,
@@ -193,7 +215,16 @@ export class ImgTexture extends TextureObject {
                 canvasFormat: this.canvasFormat,
                 context: this.context,
                 finalRender: true,
-            });
+            }
+
+            shader.texture = textureOutput;
+
+            if(this.shader.static == true) {
+                shader.render(renderOptions);
+            }
+            else{
+                shader.renderOnTimer(renderOptions);
+            }
         }
 
         this.dataUrl = (<HTMLCanvasElement>this.context.canvas).toDataURL('image/png');

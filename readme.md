@@ -10,5 +10,6 @@ bugs and low priority stuff:
 - Insert image needs error handling.
 - Texture config interfaces are not needed, and config values are weird in the constructor.
 - Clean up render() in ShaderObject.
+- dataUrl is never up never up to date for some reason, i think..
 
 other wonderful ideas:

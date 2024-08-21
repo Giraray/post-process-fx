@@ -10,6 +10,7 @@ export default class AsciiShader extends ShaderObject {
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
         super(device, canvasFormat);
         this.code = asciiDogCode;
+        this.static = true;
         this.shaderModule = device.createShaderModule({
             code: this.code,
         });

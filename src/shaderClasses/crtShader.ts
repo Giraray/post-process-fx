@@ -6,7 +6,7 @@ export default class CRTShader extends ShaderObject {
     lastUpdate: number;
     time: number;
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
-        super(device);
+        super(device, canvasFormat);
         this.code = shaderCode;
         this.time = 0;
         this.shaderModule = device.createShaderModule({

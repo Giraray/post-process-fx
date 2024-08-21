@@ -8,18 +8,22 @@ const blue = vec3(0.0,0.0,1.0);
 
 const threshold: f32 = 10.0;
 
+fn vec4Equals(a: vec4<f32>, b: vec4<f32>) -> bool {
+    var boolVec = a == b;
+    if(boolVec.x == false || boolVec.y == false || boolVec.z == false || boolVec.w == false) {
+        return false;
+    }
+    return true;
+}
+
 @compute @workgroup_size(8,8,1)
 fn main(
     @builtin(global_invocation_id) global_id: vec3<u32>,
-    @builtin(local_invocation_id) local_id: vec3<u32>,
-    @builtin(num_workgroups) num: vec3<u32>,
+    @builtin(local_invocation_id) local_id: vec3<u32>
     ) {
 
     let screenPos: vec2<i32> = vec2(i32(global_id.x), i32(global_id.y));
-    let relativePos = vec2(f32(local_id.x), f32(local_id.y));
-
     var texColor = textureLoad(uTexture, screenPos, 0);
-    var numCells: f32 = f32(num.x * num.y);
 
     tile[local_id.x][local_id.y] = texColor.rgb;
 
@@ -43,6 +47,14 @@ fn main(
         }
     }
 
+    var color = vec4(0.0,0.0,0.0, 1.0);
+
+    // SHOULD optimize performance a little bit by skipping the next steps if there are edges detected. Maybe do that for sobel?
+    if(vec4Equals(histogram, vec4(0.0))) {
+        textureStore(colorBuffer, screenPos, color);
+        return;
+    }
+
     var resultColor = vec3(0.0);
     var max = 0.0;
     if(histogram.r > max) {
@@ -61,7 +73,6 @@ fn main(
         max = histogram.a;
         resultColor = yellow;
     }
-    var color = vec4(0.0,0.0,0.0, 1.0);
 
     if(max >= threshold) {
         color = vec4(resultColor, 1.0);

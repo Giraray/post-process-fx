@@ -43,7 +43,7 @@ export abstract class ShaderObject {
     time: number;
     lastUpdate: number;
 
-    readonly static: boolean;
+    static: boolean;
     readonly device: GPUDevice;
     readonly sampler: GPUSampler;
 
@@ -120,7 +120,7 @@ export abstract class ShaderObject {
                     entries: shader.entries,
                 });
                 const renderPass = pass.beginRenderPass({
-                    colorAttachments: [{
+                    colorAttachments: [<GPURenderPassColorAttachment>{
                         view: textureOutput.createView(),
                         clearValue: [0,0,0,1],
                         loadOp: 'clear',

@@ -63,13 +63,11 @@ function initTexture(newTexture) {
 
             // if newTexture is the same as canvasTexture AND it does not have a source, do nothing
             if(!Object.hasOwn(newTexture, 'source')) {
-                console.log('sorry, no source')
                 return;
             }
     
             // if newTexture has a source that is the same as canvasTexture.source, then do nothing
             if(newTexture.source == canvasTexture.source) {
-                console.log('sorry, same source')
                 return;
             }
         }
@@ -82,11 +80,8 @@ function initTexture(newTexture) {
         initShader(keepShader);
     }
 
-    canvasTexture.initConfig();
     canvasTexture.resizeCanvas();
     canvasTexture.renderToCanvas();
-
-    console.log('updated texture :)')
 }
 
 function initShader(shader) {
@@ -168,8 +163,9 @@ asciiSelect.addEventListener('click', function() {
 initTexture(defaultTexture);
 
 // remove
+const crtShader = new CRTShader(device, canvasFormat);
 const asciiShader = new AsciiShader(device, canvasFormat);
-initShader(asciiShader);
+initShader(crtShader);
 // remove
 
 // SAVE IMAGE
