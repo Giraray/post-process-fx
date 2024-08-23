@@ -4,6 +4,7 @@
 @group(0) @binding(3) var uBitmapEdge : texture_2d<f32>;
 @group(0) @binding(4) var uTexture : texture_2d<f32>;
 @group(0) @binding(5) var<uniform> uResolution: vec2<f32>;
+@group(0) @binding(6) var<uniform> uCalculateEdges: i32;
 
 struct VertexOutput {
     @builtin(position) Position : vec4<f32>,
@@ -123,7 +124,7 @@ fn frag_main(
     var asciiEdge = textureSample(uBitmapEdge, uSampler, bitmapEdgeUV);
 
     var color: vec4<f32>;
-    if(vec3Equals(edges.rgb, vec3(0.0) )) {
+    if(vec3Equals(edges.rgb, vec3(0.0) ) || uCalculateEdges == 0) {
         return ascii;
     }
 

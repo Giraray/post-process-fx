@@ -65,7 +65,7 @@ export abstract class ShaderObject {
 
     /**
      * This is easily the ugliest function I have ever had the displeasure of writing.
-     * I am so sorry, future me.
+     * I'm sorry, future me.
      * @param options
      */
     render(options: RenderDescriptor) {

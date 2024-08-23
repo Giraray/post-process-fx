@@ -109,6 +109,14 @@ export default class AsciiShader extends ShaderObject {
         ];
 
         // FINALIZE
+        
+        // calculate edges bool (enum)
+        const calculateEdgeBoolBuffer = this.device.createBuffer({
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+        this.device.queue.writeBuffer(calculateEdgeBoolBuffer, 0, new Float32Array([1]));
+
         const finalizeModule = this.device.createShaderModule({
             label: 'ascii finalize',
             code: asciiConvertCode,
@@ -131,24 +139,28 @@ export default class AsciiShader extends ShaderObject {
             {binding: 3, resource: bitmapEdge.createView()},
             {binding: 4, resource: this.texture.createView()},
             {binding: 5, resource: {buffer: resBuffer}},
+            {binding: 6, resource: {buffer: calculateEdgeBoolBuffer}},
         ];
 
         const instructions: ProgramInstructions = {
             label: 'ASCII shader instructions',
             passes: [
                 {
+                    // processes and renders the edges of the image
                     label: 'DoG',
                     passType: 'render',
                     pipeline: this.pipeline,
                     entries: entries,
                 },
                 {
+                    // computes and renders the edge normals
                     label: 'sobel',
                     passType: 'render',
                     pipeline: sobelPipeline,
                     entries: entries,
                 },
                 {
+                    // computes the average direction of the normals (8x8)
                     label: 'downscale',
                     passType: 'compute',
                     pipeline: downscalePipeline,
@@ -156,6 +168,7 @@ export default class AsciiShader extends ShaderObject {
                     workgroupSize: 8,
                 },
                 {
+                    // converts edge calculations into ascii edges and converts image luminance into ascii
                     label: 'ascii finalize',
                     passType: 'render',
                     pipeline: finalizePipeline,

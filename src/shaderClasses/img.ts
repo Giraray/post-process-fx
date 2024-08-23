@@ -231,6 +231,24 @@ export class ImgTexture extends TextureObject {
     }
 
     public resizeCanvas() {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        if(this.size.width > vw) {
+            console.log('eruiheiruheiufh')
+            this.container.style.justifyContent = 'flex-start'; // doesnt work?
+        }
+        else {
+            this.container.style.justifyContent = 'center';
+        }
+
+        if(this.size.height > vh) {
+            this.container.style.alignItems = 'flex-start';
+        }
+        else {
+            this.container.style.alignItems = 'center';
+        }
+
         const canvas = <HTMLCanvasElement>this.context.canvas;
         canvas.width = this.size.width;
         canvas.height = this.size.height;
