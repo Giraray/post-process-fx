@@ -1,5 +1,6 @@
 import perlinCode from '../assets/shaders/perlinNoise.wgsl?raw';
 import { perlinTextureConfig } from '../createConfig';
+import {NumberConfig, EnumConfig, BoolConfig, RangeConfig} from './objectBase';
 import TextureObject from './textureObject';
 
 interface Size {
@@ -13,14 +14,6 @@ interface Size {
  * @param gridSize Zoom level. Default is 2
  * @param intensity Noise multiplication. Default is 1
  */
-interface PerlinConfig {
-    style?: StyleOptions;
-    gridSize?: number;
-    intensity?: number;
-    animate?: boolean;
-    speed?: number;
-    fractals?: number;
-}
 
 type StyleOptions =
     | 'fractal'
@@ -28,19 +21,12 @@ type StyleOptions =
     | 'normalized'
     | 'billowRidge';
 
-interface PerlinOptions {
-    config?: PerlinConfig;
-    seed: number;
-    size: Size;
-}
-
 /**
  * Creates an object containing a `GPURenderPipeline` and a `GPUBindGroup` for 
  * a perlin noise texture.
  */
-export class PerlinTexture extends TextureObject implements PerlinOptions {
+export class PerlinTexture extends TextureObject {
     time: number = 0;
-    config?: PerlinConfig;
     size: Size;
     seed: number;
 
@@ -51,100 +37,139 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
 
     lastUpdate: number;
 
-    constructor(device: GPUDevice, canvasFormat: GPUTextureFormat, context: GPUCanvasContext, options: PerlinOptions) {
+    //config
+    style: EnumConfig;
+    intensity: NumberConfig;
+    gridSize: NumberConfig;
+    animate: BoolConfig;
+    speed: NumberConfig;
+    fractals: NumberConfig;
+
+    constructor(device: GPUDevice, canvasFormat: GPUTextureFormat, context: GPUCanvasContext, size: Size) {
         super(device, canvasFormat, context);
-        this.size = options.size;
-        this.seed = options.seed;
-        this.config = options.config ? options.config : undefined;
+        this.size = size;
+        this.seed = Math.random()*100000;
         this.lastUpdate = Date.now();
 
-        if(!this.config.animate)
-            this.config.animate = false;
-        if(!this.config.intensity)
-            this.config.intensity = 1;
-        if(!this.config.gridSize)
-            this.config.gridSize = 2;
-        if(!this.config.speed)
-            this.config.speed = 1;
-        if(!this.config.fractals)
-            this.config.fractals = 5;
+        this.config = this.createConfig();
+        this.intensity = <NumberConfig>this.config[0];
+        this.gridSize = <NumberConfig>this.config[1];
+        this.style = <EnumConfig>this.config[2];
+        this.fractals = <NumberConfig>this.config[3];
+        this.animate = <BoolConfig>this.config[4];
+        this.speed = <NumberConfig>this.config[5];
 
-        this.initConfig();
+        this.initTextureConfig(this.config, this);
     }
 
-    initConfig() {
-        // generate user config
-        document.getElementById('textureOptions').innerHTML = perlinTextureConfig;
+    // man thats gross.....
+    handleNumber(target: HTMLInputElement, origin: PerlinTexture) {
+        const item: NumberConfig = this;
+        let value = parseFloat(target.value);
+        if(isNaN(value))
+            value = 0;
+        item.value = value;
 
-        // EVENT LISTENERS
-        const config = this.config;
-        const self = this;
-        const intensityElm = <HTMLInputElement>document.getElementById('intensity');
-        const styleElm = <HTMLSelectElement>document.getElementById('style');
-        const gridSizeElm = <HTMLInputElement>document.getElementById('gridSize');
-        const animateElm = <HTMLInputElement>document.getElementById('animate');
-        const speedElm = <HTMLInputElement>document.getElementById('speed');
-        const fractalsElm = <HTMLInputElement>document.getElementById('fractals');
+        clearTimeout(origin.timeout);
+        origin.renderToCanvas();
+    }
 
-        // intensity
-        intensityElm.addEventListener('change', function(event) {
-            let value = parseFloat((event.target as HTMLInputElement).value);
-            if(isNaN(value))
-                value = 0;
-            config.intensity = value;
+    handleStyle(target: HTMLInputElement, origin: PerlinTexture) {
+        const item: EnumConfig = this;
+        let value = target.value;
+        item.value = value; // todo fix
 
-            clearTimeout(self.timeout);
-            self.renderToCanvas();
-        });
+        clearTimeout(origin.timeout);
+        origin.renderToCanvas();
+    }
 
-        // style
-        styleElm.addEventListener('change', function(event) {
-            let value = (event.target as HTMLInputElement).value;
-            config.style = value as StyleOptions;
+    handleAnimate(target: HTMLInputElement, origin: PerlinTexture) {
+        const item: BoolConfig = this;
+        let value = target.checked === true ? true : false;
+        item.value = value;
 
-            clearTimeout(self.timeout);
-            self.renderToCanvas();
-        });
+        clearTimeout(origin.timeout);
+        origin.renderToCanvas();
+    }
 
-        // gridSize
-        gridSizeElm.addEventListener('change', function(event) {
-            let value = parseFloat((event.target as HTMLInputElement).value);
-            if(isNaN(value))
-                value = 0;
-            config.gridSize = value;
+    createConfig(): (NumberConfig | EnumConfig | BoolConfig)[] {
+        const intensity: NumberConfig = {
+            type: 'number',
+            label: 'Intensity',
+            id: 'intensity',
+            title: 'Increases contrast',
+            
+            default: 1,
+            value: 1,
 
-            clearTimeout(self.timeout);
-            self.renderToCanvas();
-        });
+            event: this.handleNumber,
+        };
+        
+        const gridSize: NumberConfig = {
+            type: 'number',
+            label: 'Grid size',
+            id: 'gridSize',
+            title: 'Texture size',
+            
+            default: 3,
+            value: 3,
 
-        // animate
-        animateElm.addEventListener('change', function(event) {
-            let value = (event.target as HTMLInputElement).checked === true ? true : false;
-            config.animate = value;
+            event: this.handleNumber,
+        }
 
-            clearTimeout(self.timeout);
-            self.renderToCanvas();
-        });
+        const style: EnumConfig = {
+            label: 'Style',
+            id: 'style',
+            type: 'enum',
+            default: 'natural',
+            value: 'natural',
+            options: [
+                {label: 'Natural', id: 'natural'},
+                {label: 'Fractal', id: 'fractal'},
+                {label: 'Billow ridge', id: 'billowRidge'},
+                {label: 'Normalized', id: 'normalized'},
+            ],
 
-        speedElm.addEventListener('change', function(event) {
-            let value = parseFloat((event.target as HTMLInputElement).value);
-            if(isNaN(value))
-                value = 0;
-            config.speed = value;
+            event: this.handleStyle
+        }
 
-            clearTimeout(self.timeout);
-            self.renderToCanvas();
-        });
+        const fractals: NumberConfig = {
+            type: 'number',
+            label: 'Fractals',
+            id: 'fractals',
+            title: 'Fractal amount - No effect if "Style" is not "Fractal"',
+            
+            default: 5,
+            value: 5,
 
-        fractalsElm.addEventListener('change', function(event) {
-            let value = parseFloat((event.target as HTMLInputElement).value);
-            if(isNaN(value))
-                value = 0;
-            config.fractals = value;
+            event: this.handleNumber,
+        }
 
-            clearTimeout(self.timeout);
-            self.renderToCanvas();
-        });
+        const animate: BoolConfig = {
+            type: 'bool',
+            label: 'Animate',
+            id: 'animate',
+            title: 'Animates the texture',
+            
+            default: false,
+            value: false,
+
+            event: this.handleAnimate,
+        }
+
+        const speed: NumberConfig = {
+            type: 'number',
+            label: 'Sim. speed',
+            id: 'speed',
+            title: 'Simulation speed - No effect if "Animate" is false',
+            
+            default: 1,
+            value: 1,
+
+            event: this.handleNumber,
+        }
+
+        return [intensity, gridSize, style, fractals, animate, speed];
     }
 
     setTimer() {
@@ -172,7 +197,7 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
 
         // PIPELINE
         const bindGroupLayout = device.createBindGroupLayout({
-            entries: [
+            entries: <Iterable<GPUBindGroupLayoutEntry>>[
                 {
                     binding: 0,
                     visibility: GPUShaderStage.FRAGMENT,
@@ -248,7 +273,7 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
 
         // style options
         let styleValue: number;
-        switch (this.config.style) {
+        switch (this.style.value) {
             case 'fractal':
                 styleValue = 1;
                 break;
@@ -280,11 +305,11 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
 
         // gridSize
         const gridBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
-        device.queue.writeBuffer(gridBuffer, 0, new Float32Array([this.config.gridSize]));
+        device.queue.writeBuffer(gridBuffer, 0, new Float32Array([<number>this.gridSize.value])); // bruh idfk what im doing man
 
         // intensity
         const intensityBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
-        device.queue.writeBuffer(intensityBuffer, 0, new Float32Array([this.config.intensity]));
+        device.queue.writeBuffer(intensityBuffer, 0, new Float32Array([<number>this.intensity.value]));
 
         // time
         const timeBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
@@ -292,11 +317,11 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
 
         // speed
         const speedBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
-        device.queue.writeBuffer(speedBuffer, 0, new Float32Array([this.config.speed]));
+        device.queue.writeBuffer(speedBuffer, 0, new Float32Array([<number>this.speed.value]));
 
         // fractals
         const fractalsBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
-        device.queue.writeBuffer(fractalsBuffer, 0, new Float32Array([this.config.fractals]));
+        device.queue.writeBuffer(fractalsBuffer, 0, new Float32Array([<number>this.fractals.value]));
 
         this.bindGroup = device.createBindGroup({
             label: 'perlin bindgroup',
@@ -414,7 +439,7 @@ export class PerlinTexture extends TextureObject implements PerlinOptions {
 
         this.dataUrl = (<HTMLCanvasElement>this.context.canvas).toDataURL('image/png');
 
-        if(this.config.animate === true) {
+        if(this.animate.value === true) {
             this.setTimer();
         }
     }

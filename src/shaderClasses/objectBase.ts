@@ -3,6 +3,7 @@ interface ConfigInputBase {
     id: string;
     title?: string; // user hints
     disabled?: boolean;
+    event: Function;
 }
 
 type ConfigType = 
@@ -23,9 +24,9 @@ interface NumberConfig extends ConfigInputBase {
 // enums
 interface EnumConfig extends ConfigInputBase {
     type: ConfigType;
-    default: EnumInputOption;
-    value: EnumInputOption;
-    options: [EnumInputOption];
+    default: string;
+    value: string;
+    options: EnumInputOption[];
 }
 
 interface EnumInputOption {

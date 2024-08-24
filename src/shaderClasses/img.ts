@@ -2,14 +2,11 @@ import shaderCode from '../assets/shaders/defaultShader.wgsl?raw';
 import TextureObject from './textureObject';
 import { imgTextureConfig } from '../createConfig';
 import {NumberConfig, EnumConfig, BoolConfig, RangeConfig} from './objectBase';
+import { ShaderObject } from './shaderObject';
 
 interface Size {
     width: number,
     height: number,
-}
-
-interface ImgTextureConfig {
-    resize: BoolConfig;
 }
 
 export class ImgTexture extends TextureObject {
@@ -24,6 +21,7 @@ export class ImgTexture extends TextureObject {
     bindGroup: GPUBindGroup;
     pipeline: GPURenderPipeline;
 
+    // config
     resize: BoolConfig;
 
     constructor(
@@ -38,8 +36,17 @@ export class ImgTexture extends TextureObject {
         this.resize = <BoolConfig>this.config[0];
 
         this.resizeDimensions(this.resize.value);
-        this.initConfig();
-        // this.initTextureConfig(this.config); // there has to be a better way...
+        this.initTextureConfig(this.config, this); // a bit finicky but thats fine
+    }
+
+    handleResize(target: HTMLInputElement, origin: ImgTexture) {
+        const item: BoolConfig = this; // rip type safety
+        let value = target.checked === true ? true : false;
+        item.value = value;
+
+        origin.resizeDimensions(value);
+        origin.resizeCanvas();
+        origin.renderToCanvas();
     }
 
     createConfig(): [BoolConfig] {
@@ -51,6 +58,8 @@ export class ImgTexture extends TextureObject {
             
             default: true,
             value: true,
+
+            event: this.handleResize,
         };
         return [resize];
     }
@@ -83,26 +92,6 @@ export class ImgTexture extends TextureObject {
         }
     }
 
-    initConfig() {
-        // generate user config
-        document.getElementById('textureOptions').innerHTML = imgTextureConfig;
-
-        // EVENT LISTENERS
-        const self = this;
-        const resizeElm = <HTMLInputElement>document.getElementById('resize');
-
-        // resize
-        resizeElm.addEventListener('change', function(event) {
-            let value = (event.target as HTMLInputElement).checked === true ? true : false;
-            self.resize.value = value;
-
-            self.resizeDimensions(value);
-            self.resizeCanvas();
-
-            self.renderToCanvas();
-        });
-    }
-
     updateTexture() {
         const source = this.source;
         const device = this.device;
@@ -117,9 +106,6 @@ export class ImgTexture extends TextureObject {
                 GPUTextureUsage.TEXTURE_BINDING |
                 GPUTextureUsage.RENDER_ATTACHMENT,
         });
-        let flipped: boolean = true;
-        if(this.shader)
-            flipped = false;
         device.queue.copyExternalImageToTexture(
             {source: source, flipY: false},
             {texture: texture},

@@ -125,17 +125,7 @@ defaultImgSelect.addEventListener('click', function() {
 
 // perlin texture
 perlinSelect.addEventListener('click', function() {
-    const newTexture = new PerlinTexture(device, canvasFormat, context, {
-        size: divSize,
-        seed: Math.random() * 100000,
-        context,
-        config: {
-            style: 'natural',
-            intensity: 1.0,
-            gridSize: 3.0,
-            animate: false,
-        }
-    });
+    const newTexture = new PerlinTexture(device, canvasFormat, context, divSize);
     initTexture(newTexture);
 });
 
@@ -160,7 +150,11 @@ asciiSelect.addEventListener('click', function() {
     initShader(newShader);
 })
 
-initTexture(defaultTexture);
+// remove
+const perlinTexture = new PerlinTexture(device, canvasFormat, context, divSize);
+// remove
+
+initTexture(perlinTexture);
 
 // remove
 const crtShader = new CRTShader(device, canvasFormat);
