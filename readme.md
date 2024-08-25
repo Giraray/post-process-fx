@@ -22,5 +22,5 @@ other wonderful ideas:
 
 
 ASCII optimization ideas:
-- asciiDownscale output texture can be 8x smaller; Could in theory reduce processing bandwidth costs from textureStore() in asciiDownscale, as well as using the texture in memory in asciiConvert?
+- asciiDownscale output texture can be 8x smaller; Could in theory reduce processing bandwidth costs from textureStore() in asciiDownscale, as well as from using the texture in memory in asciiConvert?
 - asciiConvert would probably benefit from conditional sampling based on edge draws.
