@@ -1,12 +1,11 @@
 @group(0) @binding(0) var colorBuffer: texture_storage_2d<rgba8unorm, write>;
 @group(0) @binding(1) var uTexture: texture_2d<f32>;
+@group(0) @binding(2) var<uniform> uThreshold: f32;
 
 var<workgroup> tile : array<array<vec3<f32>, 8>, 8>;
 const red = vec3(1.0,0.0,0.0);
 const green = vec3(0.0,1.0,0.0);
 const blue = vec3(0.0,0.0,1.0);
-
-const threshold: f32 = 10.0;
 
 fn vec4Equals(a: vec4<f32>, b: vec4<f32>) -> bool {
     var boolVec = a == b;
@@ -74,7 +73,7 @@ fn main(
         resultColor = yellow;
     }
 
-    if(max >= threshold) {
+    if(max >= uThreshold) {
         color = vec4(resultColor, 1.0);
     }
 

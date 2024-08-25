@@ -104,7 +104,6 @@ fn frag_main(
     var resolution = uResolution; // wtf just make a bindgroup layout man...
 
     // here it starts
-    var desatTex = desaturate(textureSample(uTexture, uSampler, uv).rgb);
     var fragCoord = pos.xy;
     var pixel = compressUV(8.0, fragCoord);
     var pixelTex = textureSample(uTexture, uSampler, pixel);

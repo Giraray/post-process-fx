@@ -4,9 +4,18 @@ import asciiDownscaleCode from '../assets/shaders/ascii/asciiDownscale.wgsl?raw'
 import asciiConvertCode from '../assets/shaders/ascii/asciiConvert.wgsl?raw';
 import {ShaderObject, ProgramInstructions, ShaderProgram} from './shaderObject';
 
+import {NumberConfig, EnumConfig, BoolConfig, RangeConfig} from './objectBase';
+
 import {Bitmap, bitmapVer3_Data, bitmapEdgeVer1_Data, bitmapVer4_Data, bitmapVer5_Data } from '../assets/bitmaps/bitmaps';
 
 export default class AsciiShader extends ShaderObject {
+    // config
+    drawEdges: BoolConfig;
+    edgeThreshold: NumberConfig;
+    bitmapSet: NumberConfig;
+    colorAscii: NumberConfig; // todo vec3 maybe?
+    colorBg: NumberConfig;
+
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
         super(device, canvasFormat);
         this.code = asciiDogCode;
@@ -24,6 +33,104 @@ export default class AsciiShader extends ShaderObject {
                 targets: [{format: canvasFormat}],
             }
         });
+
+        this.config = this.createConfig();
+        this.drawEdges = <BoolConfig>this.config[0];
+        this.edgeThreshold = <NumberConfig>this.config[1];
+        this.bitmapSet = <NumberConfig>this.config[2];
+        this.colorAscii = <NumberConfig>this.config[3];
+        this.colorBg = <NumberConfig>this.config[4];
+        this.initTextureConfig(this.config, this);
+    }
+
+    handleDrawEdges(target: HTMLInputElement, origin: AsciiShader, item: BoolConfig) {
+        let value = target.checked === true ? true : false;
+        item.value = value;
+
+        origin.render({
+            size: origin.size,
+            canvasFormat: origin.canvasFormat,
+            context: origin.context,
+        });
+    }
+
+    handleNumber(target: HTMLInputElement, origin: AsciiShader, item: NumberConfig) {
+        let value = parseFloat(target.value);
+        if(isNaN(value))
+            value = 0;
+        item.value = value;
+
+        origin.render({
+            size: origin.size,
+            canvasFormat: origin.canvasFormat,
+            context: origin.context,
+        });
+    }
+
+    createConfig(): (NumberConfig | BoolConfig)[] {
+        const drawEdges: BoolConfig = {
+            type: 'bool',
+            label: 'Draw edges',
+            id: 'drawEdges',
+            title: 'Draws ASCII edges - High performance impact',
+
+            default: true,
+            value: true,
+
+            event: this.handleDrawEdges,
+        }
+
+        const edgeThreshold: NumberConfig = { // todo rangeConfig
+            type: 'number',
+            label: 'Edge threshold',
+            id: 'edgeThreshold',
+            title: 'Edge strength theshold - No effect if "Draw edges" is false',
+            
+            default: 10,
+            value: 10,
+            min: 0,
+            max: 64,
+
+            event: this.handleNumber,
+        }
+
+        const bitmapSet: NumberConfig = { // todo stringConfig. Requires an in depth user explanation
+            type: 'number',
+            label: 'Bitmap set',
+            id: 'bitmapSet',
+            title: 'ASCII bitmap set',
+            
+            default: 0,
+            value: 0,
+
+            event: this.handleBitmapSet,
+        }
+
+        const colorAscii: NumberConfig = { // todo colorConfig
+            type: 'number',
+            label: 'Color 1',
+            id: 'colorAscii',
+            title: 'ASCII color',
+            
+            default: 0, // white
+            value: 0,
+
+            event: this.handleColorAscii,
+        }
+
+        const colorBg: NumberConfig = { // todo colorConfig
+            type: 'number',
+            label: 'Color 2',
+            id: 'colorBg',
+            title: 'Background color',
+            
+            default: 0, // black
+            value: 0,
+
+            event: this.handleColorBg,
+        }
+
+        return [drawEdges, edgeThreshold, bitmapSet, colorAscii, colorBg];
     }
 
     createBitmap(data: Bitmap): GPUTexture {
@@ -53,6 +160,15 @@ export default class AsciiShader extends ShaderObject {
             usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC |
              GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
         });
+
+        // CONFIG UNIFORMS
+        // edge threshold
+        const uUsage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
+        const threshBuffer = this.device.createBuffer({
+            size: 4,
+            usage: uUsage
+        });
+        this.device.queue.writeBuffer(threshBuffer, 0, new Float32Array([<number>this.edgeThreshold.value]))
 
         // resolution buffer
         const resBuffer = this.device.createBuffer({
@@ -106,6 +222,7 @@ export default class AsciiShader extends ShaderObject {
         const downscaleEntries = [
             {binding: 0, resource: colorBuffer.createView()},
             {binding: 1, resource: this.texture.createView()},
+            {binding: 2, resource: { buffer: threshBuffer }},
         ];
 
         // FINALIZE
@@ -142,39 +259,48 @@ export default class AsciiShader extends ShaderObject {
             {binding: 6, resource: {buffer: calculateEdgeBoolBuffer}},
         ];
 
+        const edgePasses: ShaderProgram[] = [
+            {
+                // processes and renders the edges of the image
+                label: 'DoG',
+                passType: 'render',
+                pipeline: this.pipeline,
+                entries: entries,
+            },
+            {
+                // computes and renders the edge normals
+                label: 'sobel',
+                passType: 'render',
+                pipeline: sobelPipeline,
+                entries: entries,
+            },
+            {
+                // computes the average direction of the normals (8x8)
+                label: 'downscale',
+                passType: 'compute',
+                pipeline: downscalePipeline,
+                entries: downscaleEntries,
+                workgroupSize: 8,
+            },
+        ]
+
+        const passes: ShaderProgram[] = [
+            {
+                // converts edge calculations into ascii edges and converts image luminance into ascii
+                label: 'ascii finalize',
+                passType: 'render',
+                pipeline: finalizePipeline,
+                entries: finalizeEntries,
+            },
+        ];
+
+        if(this.drawEdges.value === true) {
+            passes.unshift(edgePasses[0], edgePasses[1], edgePasses[2]);
+        }
+
         const instructions: ProgramInstructions = {
             label: 'ASCII shader instructions',
-            passes: [
-                {
-                    // processes and renders the edges of the image
-                    label: 'DoG',
-                    passType: 'render',
-                    pipeline: this.pipeline,
-                    entries: entries,
-                },
-                {
-                    // computes and renders the edge normals
-                    label: 'sobel',
-                    passType: 'render',
-                    pipeline: sobelPipeline,
-                    entries: entries,
-                },
-                {
-                    // computes the average direction of the normals (8x8)
-                    label: 'downscale',
-                    passType: 'compute',
-                    pipeline: downscalePipeline,
-                    entries: downscaleEntries,
-                    workgroupSize: 8,
-                },
-                {
-                    // converts edge calculations into ascii edges and converts image luminance into ascii
-                    label: 'ascii finalize',
-                    passType: 'render',
-                    pipeline: finalizePipeline,
-                    entries: finalizeEntries,
-                },
-            ],
+            passes,
         }
 
         return instructions;

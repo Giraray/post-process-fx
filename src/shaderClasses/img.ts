@@ -1,5 +1,5 @@
 import shaderCode from '../assets/shaders/defaultShader.wgsl?raw';
-import TextureObject from './textureObject';
+import {TextureObject} from './textureObject';
 import { imgTextureConfig } from '../createConfig';
 import {NumberConfig, EnumConfig, BoolConfig, RangeConfig} from './objectBase';
 import { ShaderObject } from './shaderObject';
@@ -36,11 +36,10 @@ export class ImgTexture extends TextureObject {
         this.resize = <BoolConfig>this.config[0];
 
         this.resizeDimensions(this.resize.value);
-        this.initTextureConfig(this.config, this); // a bit finicky but thats fine
+        this.initTextureConfig(this.config, this);
     }
 
-    handleResize(target: HTMLInputElement, origin: ImgTexture) {
-        const item: BoolConfig = this; // rip type safety
+    handleResize(target: HTMLInputElement, origin: ImgTexture, item: BoolConfig) {
         let value = target.checked === true ? true : false;
         item.value = value;
 

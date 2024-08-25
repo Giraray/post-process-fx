@@ -1,5 +1,4 @@
-import computeCode from '../assets/shaders/testShader/compute.wgsl?raw';
-import displayCompCode from '../assets/shaders/testShader/displayComp.wgsl?raw'; // remove
+import {ObjectBase, NumberConfig, EnumConfig, BoolConfig, RangeConfig} from './objectBase';
 
 interface Size {
     width: number,
@@ -31,8 +30,11 @@ export interface ProgramInstructions {
     passes: Array<ShaderProgram>;
 }
 
-export abstract class ShaderObject {
+export abstract class ShaderObject extends ObjectBase {
     canvasFormat: GPUTextureFormat; // YUUUUCK!!!!!!!!!!!!
+    context: GPUCanvasContext;
+    size: Size;
+
     code: string;
     shaderModule: GPUShaderModule;
     pipeline: GPURenderPipeline;
@@ -48,6 +50,7 @@ export abstract class ShaderObject {
     readonly sampler: GPUSampler;
 
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
+        super();
         this.device = device;
         this.canvasFormat = canvasFormat;
 
@@ -71,6 +74,12 @@ export abstract class ShaderObject {
     render(options: RenderDescriptor) {
         const w = options.size.width;
         const h = options.size.height;
+
+        // these are used in config events in order to internally call render()
+        this.size = {width: w, height: h}; 
+        this.context = options.context;
+        this.canvasFormat = options.canvasFormat;
+
         let textureOutput: GPUTexture;
         let pass: GPUCommandEncoder;
 
@@ -102,7 +111,7 @@ export abstract class ShaderObject {
                     const renderTarget = this.device.createTexture({
                         label: 'texA placeholder',
                         format: options.canvasFormat,
-                        size: [options.size.width, options.size.height],
+                        size: [w, h],
                         usage: 
                             GPUTextureUsage.TEXTURE_BINDING |
                             GPUTextureUsage.RENDER_ATTACHMENT |

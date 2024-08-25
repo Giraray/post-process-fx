@@ -1,7 +1,7 @@
 import perlinCode from '../assets/shaders/perlinNoise.wgsl?raw';
 import { perlinTextureConfig } from '../createConfig';
 import {NumberConfig, EnumConfig, BoolConfig, RangeConfig} from './objectBase';
-import TextureObject from './textureObject';
+import {TextureObject} from './textureObject';
 
 interface Size {
     width: number,
@@ -14,12 +14,6 @@ interface Size {
  * @param gridSize Zoom level. Default is 2
  * @param intensity Noise multiplication. Default is 1
  */
-
-type StyleOptions =
-    | 'fractal'
-    | 'natural'
-    | 'normalized'
-    | 'billowRidge';
 
 /**
  * Creates an object containing a `GPURenderPipeline` and a `GPUBindGroup` for 
@@ -62,9 +56,7 @@ export class PerlinTexture extends TextureObject {
         this.initTextureConfig(this.config, this);
     }
 
-    // man thats gross.....
-    handleNumber(target: HTMLInputElement, origin: PerlinTexture) {
-        const item: NumberConfig = this;
+    handleNumber(target: HTMLInputElement, origin: PerlinTexture, item: NumberConfig) {
         let value = parseFloat(target.value);
         if(isNaN(value))
             value = 0;
@@ -74,17 +66,15 @@ export class PerlinTexture extends TextureObject {
         origin.renderToCanvas();
     }
 
-    handleStyle(target: HTMLInputElement, origin: PerlinTexture) {
-        const item: EnumConfig = this;
+    handleStyle(target: HTMLInputElement, origin: PerlinTexture, item: EnumConfig) {
         let value = target.value;
-        item.value = value; // todo fix
+        item.value = value;
 
         clearTimeout(origin.timeout);
         origin.renderToCanvas();
     }
 
-    handleAnimate(target: HTMLInputElement, origin: PerlinTexture) {
-        const item: BoolConfig = this;
+    handleAnimate(target: HTMLInputElement, origin: PerlinTexture, item: BoolConfig) {
         let value = target.checked === true ? true : false;
         item.value = value;
 
@@ -122,7 +112,8 @@ export class PerlinTexture extends TextureObject {
             id: 'style',
             type: 'enum',
             default: 'natural',
-            value: 'natural',
+            value: 'fractal',
+            title: 'Noise style',
             options: [
                 {label: 'Natural', id: 'natural'},
                 {label: 'Fractal', id: 'fractal'},

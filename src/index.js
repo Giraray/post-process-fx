@@ -4,7 +4,7 @@ import defaultImg from './assets/eliasoutsidewhoa.jpg';
 import circleImg from './assets/Red-Circle-PNG-Images-HD.png';
 
 // textures
-import TextureObject from './shaderClasses/textureObject.ts'
+import {TextureObject} from './shaderClasses/textureObject.ts'
 import {PerlinTexture} from './shaderClasses/perlin.ts';
 import {ImgTexture} from './shaderClasses/img.ts';
 
