@@ -177,12 +177,22 @@ function processInput() {
     const reader = new FileReader();
     reader.readAsDataURL(file);
 
+    reader.onerror = () => resolve(reader.result);
     reader.onload = async function(e) {
-        const res = await fetch(e.target.result);
-        const blob = await res.blob();
-        const source = await createImageBitmap(blob, {colorSpaceConversion: 'none'});
 
-        const newTexture = createImgTexture(source);
-        initTexture(newTexture);
+        try {
+            const res = await fetch(e.target.result);
+            if(!res.ok)
+                throw new Error('Response status: ' + res.status);
+            const blob = await res.blob();
+            const source = await createImageBitmap(blob, {colorSpaceConversion: 'none'});
+    
+            const newTexture = createImgTexture(source);
+            initTexture(newTexture);
+        }
+        catch(error) {
+            console.error(error.message);
+        }
+
     }
 }

@@ -28,9 +28,6 @@ function dataToArray(data: string, resolution: number): Uint8Array {
     return array;
 }
 
-
-
-
 const bitmapVer3_Resolution = 80*8*4; // w * h * rgba
 const bitmapVer3_String = `
     ________________________________________________________________________________
@@ -100,3 +97,174 @@ export const bitmapEdgeVer1_Data: Bitmap = {
     size: {width: 32, height: 8},
     data: dataToArray(bitmapEdgeVer1_String, bitmapEdgeVer1_Resolution),
 }
+
+function assembleChars(arr: string[]): string {
+    const chars = arr.length;
+    // if(chars != 8) {
+    //     console.error('Not enough characters specified (no more or less than 8)') // todo return error to be handled in ascii config
+    //     return;
+    // }
+
+    let bitmapString = '';
+    for(let i = 1; i < 10; i++) {
+        for(let j = 0; j < chars; j++) {
+            const line = arr[j].split('\n')[i];
+            bitmapString = bitmapString.concat(line);
+        }
+    }
+    return bitmapString;
+}
+
+const cBackspace = `
+--------
+--------
+--------
+--------
+--------
+--------
+--------
+--------
+`
+
+const ca = `
+--------
+--------
+--------
+--0000--
+-0---0--
+-0---0--
+--0000--
+--------
+`;
+
+const cA = `
+--------
+--000---
+-0---0--
+-0---0--
+-0---0--
+-00000--
+-0---0--
+-0---0--
+`;
+
+const cb = `
+--------
+-0------
+-0------
+-0000---
+-0---0--
+-0---0--
+-0000---
+--------
+`;
+
+const cB = `
+--------
+-00000--
+-0----0-
+-0----0-
+-00000--
+-0----0-
+-0----0-
+-00000--
+`;
+
+const cc = `
+--------
+--------
+--000---
+-0---0--
+-0------
+-0---0--
+--000---
+--------
+`;
+
+const cC = `
+--------
+--0000--
+-0----0-
+-0------
+-0------
+-0------
+-0----0-
+--0000--
+`;
+
+const cd = `
+--------
+-----0--
+-----0--
+--0000--
+-0---0--
+-0---0--
+--0000--
+--------
+`;
+
+const cD = `
+--------
+-00000--
+-0----0-
+-0----0-
+-0----0-
+-0----0-
+-0----0-
+-00000--
+`;
+
+const ce = `
+--------
+--------
+--000---
+-0---0--
+-00000--
+-0------
+--000---
+--------
+`;
+
+const cE = `
+--------
+-000000-
+-0------
+-0------
+-00000--
+-0------
+-0------
+-000000-
+`;
+
+const cf = `
+--------
+---00---
+--0--0--
+--0-----
+-0000---
+--0-----
+--0-----
+--------
+`;
+
+const cF = `
+--------
+-000000-
+-0------
+-0------
+-00000--
+-0------
+-0------
+-0------
+`;
+
+const cBlock = `
+0000000-
+0000000-
+0000000-
+0000000-
+0000000-
+0000000-
+0000000-
+--------
+`
