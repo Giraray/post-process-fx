@@ -1,4 +1,5 @@
 interface ConfigInputBase {
+    type: ConfigType;
     label: string;
     id: string;
     title: string; // user hints
@@ -10,11 +11,11 @@ type ConfigType =
     | 'number'
     | 'enum'
     | 'bool'
-    | 'range';
+    | 'range'
+    | 'string';
 
 // number
 interface NumberConfig extends ConfigInputBase {
-    type: ConfigType;
     default: Number;
     value: Number;
     min?: Number;
@@ -23,7 +24,6 @@ interface NumberConfig extends ConfigInputBase {
 
 // enums
 interface EnumConfig extends ConfigInputBase {
-    type: ConfigType;
     default: string;
     value: string;
     options: EnumInputOption[];
@@ -36,19 +36,25 @@ interface EnumInputOption {
 
 // bool
 interface BoolConfig extends ConfigInputBase {
-    type: ConfigType;
     default: boolean;
     value: boolean;
 }
 
 // range
 interface RangeConfig extends ConfigInputBase {
-    type: ConfigType;
     default: Number;
     value: Number;
     min: Number;
     max: Number;
     configurable?: boolean; // whether or not min and max can be modified
+}
+
+// string
+interface StringConfig extends ConfigInputBase {
+    default: string;
+    value: string;
+
+    max?: Number;
 }
 
 class ObjectBase {
@@ -86,6 +92,10 @@ class ObjectBase {
 
             else if(item.type === 'enum') {
                 this.createEnumConfig(<EnumConfig>item, optionsDiv, origin);
+            }
+
+            else if(item.type === 'string') {
+                this.createStringConfig(<StringConfig>item, optionsDiv, origin);
             }
         }
     }
@@ -202,6 +212,42 @@ class ObjectBase {
             item.event(e.target, origin, item);
         });
     }
+
+    createStringConfig(item: StringConfig, optionsDiv: HTMLDivElement, origin: ObjectBase) {
+        // config container
+        const container = document.createElement('div');
+        container.setAttribute('class', 'option-container option-container_input border444');
+
+        // config label
+        const span = document.createElement('span');
+        span.setAttribute('class', 'input-desc');
+        span.innerHTML = item.label + ':';
+
+        // config input
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.classList.add('border000');
+        input.id = item.id;
+
+        if(item.max != undefined) 
+            input.maxLength = <number>item.max;
+
+        if(item.default != undefined)
+            input.value = item.default.toString();
+
+        if(item.title != undefined)
+            container.setAttribute('title', item.title);
+
+        // put elements together and add them to the DOM
+        container.appendChild(span);
+        const insertedInput = container.appendChild(input);
+        optionsDiv.appendChild(container);
+
+        // eventListener
+        insertedInput.addEventListener('change', (e) => {
+            item.event(e.target, origin, item);
+        });
+    }
 }
 
-export {NumberConfig, EnumConfig, BoolConfig, RangeConfig, ObjectBase}
+export {NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ObjectBase}

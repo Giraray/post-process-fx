@@ -15,6 +15,7 @@ bugs and low priority stuff:
 - Add onWindowResize handler.
 - re-evalute RenderDescriptor.
 - config is duplicative in ObjectBase (config objects are independently declared from config objects declared in children constructors, hence a double declaration)
+- ASCII size configuration
 
 other wonderful ideas:
 - Mouse-interactive fluid simulation texture

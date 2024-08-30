@@ -4,9 +4,9 @@ import asciiDownscaleCode from '../assets/shaders/ascii/asciiDownscale.wgsl?raw'
 import asciiConvertCode from '../assets/shaders/ascii/asciiConvert.wgsl?raw';
 import {ShaderObject, ProgramInstructions, ShaderProgram} from './shaderObject';
 
-import {NumberConfig, EnumConfig, BoolConfig, RangeConfig} from './objectBase';
+import {NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig} from './objectBase';
 
-import {Bitmap, bitmapVer3_Data, bitmapEdgeVer1_Data, bitmapVer4_Data, bitmapVer5_Data } from '../assets/bitmaps/bitmaps';
+import {Bitmap, testBitmap, bitmapEdgeVer1_Data, bitmapVer4_Data, bitmapVer5_Data } from '../assets/bitmaps/bitmaps';
 
 export default class AsciiShader extends ShaderObject {
     // config
@@ -67,6 +67,18 @@ export default class AsciiShader extends ShaderObject {
         });
     }
 
+    handleString(target: HTMLInputElement, origin: AsciiShader, item: StringConfig) {
+        let value = target.value;
+        item.value = value;
+
+        origin.render({
+            size: origin.size,
+            canvasFormat: origin.canvasFormat,
+            context: origin.context,
+        });
+        console.log(item)
+    }
+
     createConfig(): (NumberConfig | BoolConfig)[] {
         const drawEdges: BoolConfig = {
             type: 'bool',
@@ -94,16 +106,16 @@ export default class AsciiShader extends ShaderObject {
             event: this.handleNumber,
         }
 
-        const bitmapSet: NumberConfig = { // todo stringConfig. Requires an in depth user explanation
-            type: 'number',
+        const bitmapSet: StringConfig = { // todo stringConfig. Requires an in depth user explanation
+            type: 'string',
             label: 'Bitmap set',
             id: 'bitmapSet',
             title: 'ASCII bitmap set',
             
-            default: 0,
-            value: 0,
+            default: '',
+            value: '',
 
-            event: this.handleBitmapSet,
+            event: this.handleString,
         }
 
         const colorAscii: NumberConfig = { // todo colorConfig

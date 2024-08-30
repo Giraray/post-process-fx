@@ -48,7 +48,7 @@ fn main(
 
     var color = vec4(0.0,0.0,0.0, 1.0);
 
-    // SHOULD optimize performance a little bit by skipping the next steps if there are edges detected. Maybe do that for sobel?
+    // todo SHOULD optimize performance a little bit by skipping the next steps if there are edges detected. Maybe do that for sobel?
     if(vec4Equals(histogram, vec4(0.0))) {
         textureStore(colorBuffer, screenPos, color);
         return;
