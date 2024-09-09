@@ -12,6 +12,8 @@ struct OurVertexShaderOutput {
 @group(0) @binding(5) var<uniform> uTime: f32;
 @group(0) @binding(6) var<uniform> uSpeed: f32;
 @group(0) @binding(7) var<uniform> uFractals: f32;
+@group(0) @binding(8) var<uniform> uPosCol: vec3<f32>;
+@group(0) @binding(9) var<uniform> uNegCol: vec3<f32>;
 
 @vertex fn vertexMain(
     @builtin(vertex_index) vertexIndex : u32
@@ -40,6 +42,14 @@ struct OurVertexShaderOutput {
     return vsOutput;
 }
 
+fn vec3Equals(a: vec3<f32>, b: vec3<f32>) -> bool {
+    var boolVec = a == b;
+    if(boolVec.x == false || boolVec.y == false || boolVec.z == false) {
+        return false;
+    }
+    return true;
+}
+
 fn randomGradient(corner: vec2<f32>) -> vec2<f32> {
         var x = dot(corner, vec2(1.9, 1.2));
         var y = dot(corner, vec2(2.3, 1.3));
@@ -55,8 +65,6 @@ fn quintic(p: vec2<f32>) -> vec2<f32> {
 }
 
 @fragment fn fragMain(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
-    // var color = textureSample(ourTexture, ourSampler, fsInput.fragUV) + 0.2;  // remove
-
     var uv = (fsInput.fragCoord - uResolution.xy * 0.5) / min(uResolution.x, uResolution.y);
     uv += vec2(uSeed*0.13, uSeed*0.23);
 
@@ -109,7 +117,8 @@ fn quintic(p: vec2<f32>) -> vec2<f32> {
         color = abs(color);
     }
 
-    color = pow(color*uIntensity, uIntensity);
+    var resCol = mix(uNegCol, uPosCol, color);
+    resCol *= pow(color*uIntensity, uIntensity);
 
-    return vec4(vec3(color), 1.0);
+    return vec4(resCol, 1.0);
 }

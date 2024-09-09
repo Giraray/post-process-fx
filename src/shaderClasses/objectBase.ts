@@ -12,7 +12,8 @@ type ConfigType =
     | 'enum'
     | 'bool'
     | 'range'
-    | 'string';
+    | 'string'
+    | 'color';
 
 // number
 interface NumberConfig extends ConfigInputBase {
@@ -57,11 +58,17 @@ interface StringConfig extends ConfigInputBase {
     max?: Number;
 }
 
+// color
+interface ColorConfig extends ConfigInputBase {
+    default: string;
+    value: string
+}
+
 class ObjectBase {
     /**
      * An array of configuration instructions.
      */
-    config: (NumberConfig | EnumConfig | BoolConfig)[];
+    config: (NumberConfig | EnumConfig | BoolConfig | StringConfig | ColorConfig)[];
 
     /**
      * Replaces existing configuration options with newly generated ones. Typically to be called when creating 
@@ -69,7 +76,7 @@ class ObjectBase {
      * @param config A ConfigObject containing the blueprint for the configurations to be generated.
      * @param origin The parent TextureObject or ShaderObject.
      */
-    public initTextureConfig(config: (NumberConfig | EnumConfig | BoolConfig)[], origin: ObjectBase) {
+    public initTextureConfig(config: (NumberConfig | EnumConfig | BoolConfig | ColorConfig | StringConfig)[], origin: ObjectBase) {
         const objectType = Object.getPrototypeOf(Object.getPrototypeOf(origin)).constructor.name; // "TextureObject" or "Shader Object"
         let optionsDiv: HTMLDivElement;
         if(objectType === 'TextureObject')
@@ -96,6 +103,10 @@ class ObjectBase {
 
             else if(item.type === 'string') {
                 this.createStringConfig(<StringConfig>item, optionsDiv, origin);
+            }
+
+            else if(item.type === 'color') {
+                this.createColorConfig(<ColorConfig>item, optionsDiv, origin);
             }
         }
     }
@@ -248,6 +259,52 @@ class ObjectBase {
             item.event(e.target, origin, item);
         });
     }
+
+    createColorConfig(item: ColorConfig, optionsDiv: HTMLDivElement, origin: ObjectBase) {
+        // config container
+        const container = document.createElement('div');
+        container.setAttribute('class', 'option-container option-container_color border444');
+
+        // config label
+        const span = document.createElement('span');
+        span.setAttribute('class', 'input-desc');
+        span.innerHTML = item.label + ':';
+
+        // config input
+        const input = document.createElement('input');
+        input.type = 'color';
+        input.classList.add('border000');
+        input.id = item.id;
+        input.value = item.value;
+
+        if(item.default != undefined)
+            input.value = item.default;
+
+        if(item.title != undefined)
+            container.setAttribute('title', item.title);
+
+        // put elements together and add them to the DOM
+        container.appendChild(span);
+        const insertedInput = container.appendChild(input);
+        optionsDiv.appendChild(container);
+
+        // eventListener
+        insertedInput.addEventListener('change', (e) => {
+            item.event(e.target, origin, item);
+        });
+    }
+
+    hexToRgb(hex: string): Number[] {
+        var r = parseInt(hex.slice(1, 3), 16),
+            g = parseInt(hex.slice(3, 5), 16),
+            b = parseInt(hex.slice(5, 7), 16);
+        
+        r = Math.floor(r/255 * 100000) / 100000;
+        g = Math.floor(g/255 * 100000) / 100000;
+        b = Math.floor(b/255 * 100000) / 100000;
+    
+        return [r, g, b];
+    }
 }
 
-export {NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ObjectBase}
+export {NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ColorConfig, ObjectBase}

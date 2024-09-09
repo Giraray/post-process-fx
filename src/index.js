@@ -157,9 +157,9 @@ const perlinTexture = new PerlinTexture(device, canvasFormat, context, divSize);
 initTexture(perlinTexture);
 
 // remove
-const crtShader = new CRTShader(device, canvasFormat);
-const asciiShader = new AsciiShader(device, canvasFormat);
-initShader(asciiShader);
+// const crtShader = new CRTShader(device, canvasFormat);
+// const asciiShader = new AsciiShader(device, canvasFormat);
+// initShader(asciiShader);
 // remove
 
 // SAVE IMAGE
@@ -191,7 +191,8 @@ function processInput() {
             initTexture(newTexture);
         }
         catch(error) {
-            console.error(error.message);
+            alert('File cannot be over 10 MB.. for some reason. \n\n Uploaded file was ' + Math.round(file.size/10000)/100 + ' MB');
+            console.error('Error: ' + error.message);
         }
 
     }

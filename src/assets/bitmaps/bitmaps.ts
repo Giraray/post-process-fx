@@ -90,7 +90,7 @@ const bitmapEdgeVer1_String = `
     ---0-------0---------------0----
     --0---------0--------------0----
     --0---------0--------------0----
-    -0-----------0-000000000--------
+    -0-----------0--0000000---------
 `
 
 export const bitmapEdgeVer1_Data: Bitmap = {
@@ -98,12 +98,42 @@ export const bitmapEdgeVer1_Data: Bitmap = {
     data: dataToArray(bitmapEdgeVer1_String, bitmapEdgeVer1_Resolution),
 }
 
+// bubble sort based on brightness
+function sortByBrightness(arr: string[]): string[] {
+    for(let pass = 0; pass < arr.length; pass++) {
+        for(let i = 0; i < arr.length - 1; i++) {
+            if(getCharBrightness(arr[i]) > getCharBrightness(arr[i + 1])) {
+                const nextChar = arr[i+1];
+                console.log('swapped: ' + (arr[i]) + ' with ' + (arr[i+1]))
+                arr[i+1] = arr[i];
+                arr[i] = nextChar;
+            }
+        }
+    }
+
+    return arr;
+}
+
+function getCharBrightness(char: string): Number {
+    let x = 0;
+    for(let i = 0; i < char.length; i++) {
+        if(char[i] === '0') {
+            x += 1;
+        }
+    }
+    return x;
+}
+
+// todo validation
+/**
+ * Assembles bitmap characters into a single data string, sorting them by "brightness" 
+ * in the process.
+ * @param arr String of bitmap characters.
+ * @returns Data string containing the assembled bitmap.
+ */
 function assembleChars(arr: string[]): string {
     const chars = arr.length;
-    // if(chars != 8) {
-    //     console.error('Not enough characters specified (no more or less than 8)') // todo return error to be handled in ascii config
-    //     return;
-    // }
+    arr = sortByBrightness(arr);
 
     let bitmapString = '';
     for(let i = 1; i <= 10; i++) {
@@ -122,6 +152,61 @@ const cBackspace = `
 --------
 --------
 --------
+--------
+--------
+`
+
+const cDot = `
+--------
+--------
+--------
+--------
+--------
+--------
+---0----
+--------
+`
+
+const cColon = `
+--------
+--------
+--------
+---0----
+--------
+--------
+---0----
+--------
+`
+
+const cSemicolon = `
+--------
+--------
+--------
+---0----
+--------
+---0----
+---0----
+--------
+`
+
+const cMinus = `
+--------
+--------
+--------
+--------
+--000---
+--------
+--------
+--------
+`
+
+const cPlus = `
+--------
+--------
+--------
+---0----
+--000---
+---0----
 --------
 --------
 `
@@ -258,6 +343,39 @@ const cF = `
 -0------
 `;
 
+const cg = `
+--------
+--------
+--000---
+-0---0--
+-0---0--
+--0000--
+-----0--
+--000---
+`;
+
+const ch = `
+--------
+-0------
+-0------
+-0000---
+-0---0--
+-0---0--
+-0---0--
+--------
+`;
+
+const cH = `
+--------
+-0----0-
+-0----0-
+-0----0-
+-000000-
+-0----0-
+-0----0-
+-0----0-
+`;
+
 const cBlock = `
 0000000-
 0000000-
@@ -271,5 +389,5 @@ const cBlock = `
 
 export const testBitmap: Bitmap = {
     size: {width: 80, height: 8},
-    data: dataToArray(assembleChars([cBackspace, cb, cc, cd, cA, cB, cC, cD, cF, cBlock]), 8*8*10*4)
+    data: dataToArray(assembleChars([cBackspace, cDot, cColon, cPlus, cc, cg, cC, cH, cB, cBlock]), 8*8*10*4)
 }

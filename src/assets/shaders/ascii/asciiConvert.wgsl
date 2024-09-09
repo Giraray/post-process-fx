@@ -5,6 +5,8 @@
 @group(0) @binding(4) var uTexture : texture_2d<f32>;
 @group(0) @binding(5) var<uniform> uResolution: vec2<f32>;
 @group(0) @binding(6) var<uniform> uCalculateEdges: i32;
+@group(0) @binding(7) var<uniform> uAsciiCol: vec3<f32>;
+@group(0) @binding(8) var<uniform> uBgCol: vec3<f32>;
 
 struct VertexOutput {
     @builtin(position) Position : vec4<f32>,
@@ -102,6 +104,7 @@ fn frag_main(
     ) -> @location(0) vec4<f32> {
     
     var resolution = uResolution; // wtf just make a bindgroup layout man...
+    var thing = uBgCol;
 
     // here it starts
     var fragCoord = pos.xy;
@@ -124,8 +127,14 @@ fn frag_main(
 
     var color: vec4<f32>;
     if(vec3Equals(edges.rgb, vec3(0.0) ) || uCalculateEdges == 0) {
-        return ascii;
+        if(ascii.r == 0.0) {
+            ascii = vec4(uBgCol, 1.0);
+        }
+        return ascii * vec4(uAsciiCol,1.0);
     }
 
-    return asciiEdge;
+    if(asciiEdge.r == 0.0) {
+        asciiEdge = vec4(uBgCol, 1.0);
+    }
+    return asciiEdge * vec4(uAsciiCol,1.0);
 }

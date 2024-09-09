@@ -4,7 +4,7 @@ import asciiDownscaleCode from '../assets/shaders/ascii/asciiDownscale.wgsl?raw'
 import asciiConvertCode from '../assets/shaders/ascii/asciiConvert.wgsl?raw';
 import {ShaderObject, ProgramInstructions, ShaderProgram} from './shaderObject';
 
-import {NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig} from './objectBase';
+import {NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ColorConfig} from './objectBase';
 
 import {Bitmap, testBitmap, bitmapEdgeVer1_Data, bitmapVer4_Data, bitmapVer5_Data } from '../assets/bitmaps/bitmaps';
 
@@ -13,8 +13,8 @@ export default class AsciiShader extends ShaderObject {
     drawEdges: BoolConfig;
     edgeThreshold: NumberConfig;
     bitmapSet: NumberConfig;
-    colorAscii: NumberConfig; // todo vec3 maybe?
-    colorBg: NumberConfig;
+    colorAscii: ColorConfig;
+    colorBg: ColorConfig;
 
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
         super(device, canvasFormat);
@@ -38,8 +38,8 @@ export default class AsciiShader extends ShaderObject {
         this.drawEdges = <BoolConfig>this.config[0];
         this.edgeThreshold = <NumberConfig>this.config[1];
         this.bitmapSet = <NumberConfig>this.config[2];
-        this.colorAscii = <NumberConfig>this.config[3];
-        this.colorBg = <NumberConfig>this.config[4];
+        this.colorAscii = <ColorConfig>this.config[3];
+        this.colorBg = <ColorConfig>this.config[4];
         this.initTextureConfig(this.config, this);
     }
 
@@ -76,10 +76,21 @@ export default class AsciiShader extends ShaderObject {
             canvasFormat: origin.canvasFormat,
             context: origin.context,
         });
-        console.log(item)
     }
 
-    createConfig(): (NumberConfig | BoolConfig)[] {
+    handleColor(target: HTMLInputElement, origin: AsciiShader, item: ColorConfig) {
+        let value = target.value;
+        item.value = value;
+
+        clearTimeout(origin.timeout);
+        origin.render({
+            size: origin.size,
+            canvasFormat: origin.canvasFormat,
+            context: origin.context,
+        });
+    }
+
+    createConfig(): (NumberConfig | BoolConfig | ColorConfig | StringConfig)[] {
         const drawEdges: BoolConfig = {
             type: 'bool',
             label: 'Draw edges',
@@ -106,7 +117,7 @@ export default class AsciiShader extends ShaderObject {
             event: this.handleNumber,
         }
 
-        const bitmapSet: StringConfig = { // todo stringConfig. Requires an in depth user explanation
+        const bitmapSet: StringConfig = { // todo indepth user explanation
             type: 'string',
             label: 'Bitmap set',
             id: 'bitmapSet',
@@ -118,28 +129,28 @@ export default class AsciiShader extends ShaderObject {
             event: this.handleString,
         }
 
-        const colorAscii: NumberConfig = { // todo colorConfig
-            type: 'number',
+        const colorAscii: ColorConfig = { // todo colorConfig
+            type: 'color',
             label: 'Color 1',
             id: 'colorAscii',
             title: 'ASCII color',
             
-            default: 0, // white
-            value: 0,
+            default: "#ffffff",
+            value: "#ffffff",
 
-            event: this.handleColorAscii,
+            event: this.handleColor,
         }
 
-        const colorBg: NumberConfig = { // todo colorConfig
-            type: 'number',
+        const colorBg: ColorConfig = { // todo colorConfig
+            type: 'color',
             label: 'Color 2',
             id: 'colorBg',
             title: 'Background color',
             
-            default: 0, // black
-            value: 0,
+            default: "#000000",
+            value: "#000000",
 
-            event: this.handleColorBg,
+            event: this.handleColor,
         }
 
         return [drawEdges, edgeThreshold, bitmapSet, colorAscii, colorBg];
@@ -176,18 +187,19 @@ export default class AsciiShader extends ShaderObject {
         // CONFIG UNIFORMS
         // edge threshold
         const uUsage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
-        const threshBuffer = this.device.createBuffer({
-            size: 4,
-            usage: uUsage
-        });
+        const threshBuffer = this.device.createBuffer({size: 4, usage: uUsage});
         this.device.queue.writeBuffer(threshBuffer, 0, new Float32Array([<number>this.edgeThreshold.value]))
 
         // resolution buffer
-        const resBuffer = this.device.createBuffer({
-            size:8,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
+        const resBuffer = this.device.createBuffer({size:8, usage: uUsage});
         this.device.queue.writeBuffer(resBuffer, 0, new Float32Array([width, height]));
+
+        // colors
+        const posColorBuffer = this.device.createBuffer({size: 12,usage: uUsage});
+        this.device.queue.writeBuffer(posColorBuffer, 0, new Float32Array(<number[]>this.hexToRgb(this.colorAscii.value)));
+
+        const negColorBuffer = this.device.createBuffer({size: 12,usage: uUsage});
+        this.device.queue.writeBuffer(negColorBuffer, 0, new Float32Array(<number[]>this.hexToRgb(this.colorBg.value)));
 
         // bitmaps
         const bitmap = this.createBitmap(bitmapVer5_Data);
@@ -269,6 +281,8 @@ export default class AsciiShader extends ShaderObject {
             {binding: 4, resource: this.texture.createView()},
             {binding: 5, resource: {buffer: resBuffer}},
             {binding: 6, resource: {buffer: calculateEdgeBoolBuffer}},
+            {binding: 7, resource: {buffer: posColorBuffer}},
+            {binding: 8, resource: {buffer: negColorBuffer}},
         ];
 
         const edgePasses: ShaderProgram[] = [

@@ -220,8 +220,7 @@ export class ImgTexture extends TextureObject {
         const vh = window.innerHeight;
 
         if(this.size.width > vw) {
-            console.log('eruiheiruheiufh')
-            this.container.style.justifyContent = 'flex-start'; // doesnt work?
+            this.container.style.justifyContent = 'flex-start'; // todo doesnt work?
         }
         else {
             this.container.style.justifyContent = 'center';

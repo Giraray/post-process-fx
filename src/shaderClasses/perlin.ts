@@ -1,6 +1,6 @@
 import perlinCode from '../assets/shaders/perlinNoise.wgsl?raw';
 import { perlinTextureConfig } from '../createConfig';
-import {NumberConfig, EnumConfig, BoolConfig, RangeConfig} from './objectBase';
+import {NumberConfig, EnumConfig, BoolConfig, RangeConfig, ColorConfig} from './objectBase';
 import {TextureObject} from './textureObject';
 
 interface Size {
@@ -38,6 +38,8 @@ export class PerlinTexture extends TextureObject {
     animate: BoolConfig;
     speed: NumberConfig;
     fractals: NumberConfig;
+    posColor: ColorConfig;
+    negColor: ColorConfig;
 
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat, context: GPUCanvasContext, size: Size) {
         super(device, canvasFormat, context);
@@ -52,6 +54,8 @@ export class PerlinTexture extends TextureObject {
         this.fractals = <NumberConfig>this.config[3];
         this.animate = <BoolConfig>this.config[4];
         this.speed = <NumberConfig>this.config[5];
+        this.posColor = <ColorConfig>this.config[6];
+        this.negColor = <ColorConfig>this.config[7];
 
         this.initTextureConfig(this.config, this);
     }
@@ -82,7 +86,15 @@ export class PerlinTexture extends TextureObject {
         origin.renderToCanvas();
     }
 
-    createConfig(): (NumberConfig | EnumConfig | BoolConfig)[] {
+    handleColor(target: HTMLInputElement, origin: PerlinTexture, item: ColorConfig) {
+        let value = target.value;
+        item.value = value;
+
+        clearTimeout(origin.timeout);
+        origin.renderToCanvas();
+    }
+
+    createConfig(): (NumberConfig | EnumConfig | BoolConfig | ColorConfig)[] {
         const intensity: NumberConfig = {
             type: 'number',
             label: 'Intensity',
@@ -112,7 +124,7 @@ export class PerlinTexture extends TextureObject {
             id: 'style',
             type: 'enum',
             default: 'natural',
-            value: 'fractal',
+            value: 'natural',
             title: 'Noise style',
             options: [
                 {label: 'Natural', id: 'natural'},
@@ -160,7 +172,31 @@ export class PerlinTexture extends TextureObject {
             event: this.handleNumber,
         }
 
-        return [intensity, gridSize, style, fractals, animate, speed];
+        const negColor: ColorConfig = {
+            type: 'color',
+            label: 'Color 1',
+            id: 'posColor',
+            title: 'Color of positive values',
+
+            default: '#ffffff',
+            value: '#ffffff',
+
+            event: this.handleColor,
+        }
+
+        const posColor: ColorConfig = {
+            type: 'color',
+            label: 'Color 2',
+            id: 'negColor',
+            title: 'Color of negative values',
+
+            default: '#000000',
+            value: '#000000',
+
+            event: this.handleColor,
+        }
+
+        return [intensity, gridSize, style, fractals, animate, speed, negColor, posColor];
     }
 
     setTimer() {
@@ -245,6 +281,20 @@ export class PerlinTexture extends TextureObject {
                         type: 'uniform',
                     },
                 },
+                {
+                    binding: 8,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    buffer: {
+                        type: 'uniform',
+                    },
+                },
+                {
+                    binding: 9,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    buffer: {
+                        type: 'uniform',
+                    },
+                },
             ]
         });
 
@@ -314,6 +364,13 @@ export class PerlinTexture extends TextureObject {
         const fractalsBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
         device.queue.writeBuffer(fractalsBuffer, 0, new Float32Array([<number>this.fractals.value]));
 
+        // colors
+        const posColorBuffer = device.createBuffer({size: 12,usage: usage_UniformCopy});
+        device.queue.writeBuffer(posColorBuffer, 0, new Float32Array(<number[]>this.hexToRgb(this.posColor.value)));
+
+        const negColorBuffer = device.createBuffer({size: 12,usage: usage_UniformCopy});
+        device.queue.writeBuffer(negColorBuffer, 0, new Float32Array(<number[]>this.hexToRgb(this.negColor.value)));
+
         this.bindGroup = device.createBindGroup({
             label: 'perlin bindgroup',
             layout: bindGroupLayout,
@@ -349,6 +406,14 @@ export class PerlinTexture extends TextureObject {
                 {
                     binding: 7,
                     resource: {buffer: fractalsBuffer}
+                },
+                {
+                    binding: 8,
+                    resource: {buffer: posColorBuffer}
+                },
+                {
+                    binding: 9,
+                    resource: {buffer: negColorBuffer}
                 },
             ],
         });

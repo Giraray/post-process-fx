@@ -1,7 +1,8 @@
 A silly website to showcase silly shaders
 
 todo (high priority stuff):
-- Finish ASCII and CRT configs (implement range- and colorConfig objects)
+- implement user input support for ascii bitmaps (80% done, 15% bitmaps done)
+- CRT configs (ascii is done)
 - Learn SDF and raytracing to make extra cool 3D simulations as textures
 - Halftone/comic book shader :))))
 - gif/video support for ImgTexture?
@@ -9,17 +10,14 @@ todo (high priority stuff):
 bugs and low priority stuff:
 - Insert image needs error handling.
 - Clean up render() in ShaderObject.
-- dataUrl is never up to date for some reason, i think..
 - Disabling resize causes large images to clip out of the window because they are centered.
-- Better way to manage bitmaps, and support user input.
 - Add onWindowResize handler.
 - re-evalute RenderDescriptor.
-- config is duplicative in ObjectBase (config objects are independently declared from config objects declared in children constructors, hence a double declaration)
-- ASCII size configuration
 
-other wonderful ideas:
+things that would be nice to have:
 - Mouse-interactive fluid simulation texture
 - whole ass UI overhaul
+- ASCII size configuration
 
 
 ASCII optimization ideas:

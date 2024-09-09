@@ -159,6 +159,13 @@ input[type="range"] {
     min-width: 30px;
 }
 
+/* color input */
+input[type="color"] {
+    width: 100%;
+    padding: 0;
+    height: 100%;
+}
+
 /* ITEM PANEL */
 .item-panel {
     width: 30%;
