@@ -6,6 +6,7 @@ todo (high priority stuff):
 - Learn SDF and raytracing to make extra cool 3D simulations as textures
 - Halftone/comic book shader :))))
 - gif/video support for ImgTexture?
+- configs dont update download data.
 
 bugs and low priority stuff:
 - Insert image needs error handling.
