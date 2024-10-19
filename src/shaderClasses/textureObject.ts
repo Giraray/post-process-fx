@@ -21,15 +21,17 @@ export abstract class TextureObject extends ObjectBase {
      * @param shader Removes and deactivates current shaders if null
      */
     public setShader(shader: ShaderObject | null) {
+        const shaderConfigs = document.getElementById('shaderOptions');
 
-        // if shader exists from before: deactive it
+        // if texture already has a shader: deactive it
         if(this.shader != undefined) {
             clearInterval(this.shader.timeout);
         }
 
-        // if current shader is selected again: negate it
+        // if current shader is reselected: negate it. Also clear out shader config HTML
         if(this.shader != undefined && shader != null && shader.constructor.name === this.shader.constructor.name) {
             shader = null;
+            shaderConfigs.innerHTML = '';
         }
 
         this.shader = shader;

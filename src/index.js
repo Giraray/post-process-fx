@@ -154,12 +154,12 @@ asciiSelect.addEventListener('click', function() {
 const perlinTexture = new PerlinTexture(device, canvasFormat, context, divSize);
 // remove
 
-initTexture(perlinTexture);
+initTexture(createImgTexture(source));
 
 // remove
-// const crtShader = new CRTShader(device, canvasFormat);
+const crtShader = new CRTShader(device, canvasFormat);
 // const asciiShader = new AsciiShader(device, canvasFormat);
-// initShader(asciiShader);
+initShader(crtShader);
 // remove
 
 // SAVE IMAGE

@@ -10,9 +10,10 @@ todo (high priority stuff):
 bugs and low priority stuff:
 - Insert image needs error handling.
 - Clean up render() in ShaderObject.
-- Disabling resize causes large images to clip out of the window because they are centered.
 - Add onWindowResize handler.
 - re-evalute RenderDescriptor.
+- ASCII DoG config
+- CRT filter has weird artefacts on ImgTextures. Have no idea why
 
 things that would be nice to have:
 - Mouse-interactive fluid simulation texture

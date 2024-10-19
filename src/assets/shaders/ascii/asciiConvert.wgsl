@@ -129,12 +129,18 @@ fn frag_main(
     if(vec3Equals(edges.rgb, vec3(0.0) ) || uCalculateEdges == 0) {
         if(ascii.r == 0.0) {
             ascii = vec4(uBgCol, 1.0);
+            return ascii;
         }
-        return ascii * vec4(uAsciiCol,1.0);
+        else {
+            return ascii * vec4(uAsciiCol,1.0);
+        }
     }
 
     if(asciiEdge.r == 0.0) {
         asciiEdge = vec4(uBgCol, 1.0);
+        return asciiEdge;
     }
-    return asciiEdge * vec4(uAsciiCol,1.0);
+    else {
+        return asciiEdge * vec4(uAsciiCol,1.0);
+    }
 }

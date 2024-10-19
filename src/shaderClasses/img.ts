@@ -218,12 +218,15 @@ export class ImgTexture extends TextureObject {
     public resizeCanvas() {
         const vw = window.innerWidth;
         const vh = window.innerHeight;
+        const body = document.getElementsByTagName('body')[0];
 
         if(this.size.width > vw) {
-            this.container.style.justifyContent = 'flex-start'; // todo doesnt work?
+            this.container.style.justifyContent = 'flex-start';
+            body.style.alignItems = 'start';
         }
         else {
             this.container.style.justifyContent = 'center';
+            body.style.alignItems = 'center';
         }
 
         if(this.size.height > vh) {

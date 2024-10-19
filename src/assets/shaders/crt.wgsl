@@ -35,10 +35,11 @@ struct OurVertexShaderOutput {
 @group(0) @binding(1) var ourTexture: texture_2d<f32>;
 @group(0) @binding(2) var<uniform> uResolution: vec2<f32>;
 @group(0) @binding(3) var<uniform> uTime: f32;
+@group(0) @binding(4) var<uniform> uDoDistortion: f32;
 
 const SCAN_BRIGHTNESS = 0.38;
 const MOIRE_OPACITY = 0.9;
-const CRT_OPACITY = 0.4;
+const CRT_OPACITY = 0.5;
 const CRT_SPREAD = 5.0;
 
 // protrudes the UV into a convex
@@ -60,7 +61,10 @@ fn modulo(a: f32, b: f32) -> f32 {
     var uv = fsInput.fragUV;
     uv = curveUV(uv);
 
-    var distortSpeed = uTime * 2.0;
+    var distortSpeed = 0.0;
+    if(uDoDistortion == 1.0) {
+        distortSpeed = uTime * 2.0;
+    }
     
     // x = complex sinusoid; multiplication of multiple sine waves
     var sinewave = sin(0.3*distortSpeed+uv.y*10.0) * sin(0.7*distortSpeed+uv.y*13.0) * sin(0.63*distortSpeed+uv.y*16.0) * 0.001;
