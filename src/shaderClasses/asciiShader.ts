@@ -15,6 +15,7 @@ export default class AsciiShader extends ShaderObject {
     bitmapSet: NumberConfig;
     colorAscii: ColorConfig;
     colorBg: ColorConfig;
+    dogStrength: NumberConfig;
 
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
         super(device, canvasFormat);
@@ -40,6 +41,7 @@ export default class AsciiShader extends ShaderObject {
         this.bitmapSet = <NumberConfig>this.config[2];
         this.colorAscii = <ColorConfig>this.config[3];
         this.colorBg = <ColorConfig>this.config[4];
+        this.dogStrength = <NumberConfig>this.config[5];
         this.initTextureConfig(this.config, this);
     }
 
@@ -121,15 +123,18 @@ export default class AsciiShader extends ShaderObject {
             type: 'string',
             label: 'Bitmap set',
             id: 'bitmapSet',
-            title: 'ASCII bitmap set',
+            // title: 'ASCII bitmap set',
+            title: "In progress!",
             
             default: '',
             value: '',
 
+            disabled: true,
+
             event: this.handleString,
         }
 
-        const colorAscii: ColorConfig = { // todo colorConfig
+        const colorAscii: ColorConfig = {
             type: 'color',
             label: 'Color 1',
             id: 'colorAscii',
@@ -141,7 +146,7 @@ export default class AsciiShader extends ShaderObject {
             event: this.handleColor,
         }
 
-        const colorBg: ColorConfig = { // todo colorConfig
+        const colorBg: ColorConfig = {
             type: 'color',
             label: 'Color 2',
             id: 'colorBg',
@@ -153,7 +158,21 @@ export default class AsciiShader extends ShaderObject {
             event: this.handleColor,
         }
 
-        return [drawEdges, edgeThreshold, bitmapSet, colorAscii, colorBg];
+        const dogStrength: NumberConfig = {
+            type: 'number',
+            label: 'Detail level',
+            id: 'dogStrength',
+            title: 'Controls the strength of the differernce of gaussians - No effect if "Draw edges" is false',
+            
+            default: 3.8,
+            value: 3.8,
+
+            step: 0.1,
+
+            event: this.handleNumber,
+        }
+
+        return [drawEdges, edgeThreshold, bitmapSet, colorAscii, colorBg, dogStrength];
     }
 
     createBitmap(data: Bitmap): GPUTexture {
@@ -201,18 +220,29 @@ export default class AsciiShader extends ShaderObject {
         const negColorBuffer = this.device.createBuffer({size: 12,usage: uUsage});
         this.device.queue.writeBuffer(negColorBuffer, 0, new Float32Array(<number[]>this.hexToRgb(this.colorBg.value)));
 
+        // DoG strength
+        const dogStrengthBuffer = this.device.createBuffer({size: 4,usage: uUsage});
+        this.device.queue.writeBuffer(dogStrengthBuffer, 0, new Float32Array([<number>this.dogStrength.value]));
+
         // bitmaps
         const bitmap = this.createBitmap(bitmapVer5_Data);
         const bitmapEdge = this.createBitmap(bitmapEdgeVer1_Data);
 
         // DoG
-        const entries = [
+        const dogEntries = [
+            {binding: 0, resource: this.sampler},
+            {binding: 1, resource: this.texture.createView()},
+            {binding: 2, resource: { buffer: resBuffer }},
+            {binding: 3, resource: { buffer: dogStrengthBuffer }},
+        ];
+
+        // SOBEL
+        const sobelEntries = [
             {binding: 0, resource: this.sampler},
             {binding: 1, resource: this.texture.createView()},
             {binding: 2, resource: { buffer: resBuffer }},
         ];
 
-        // SOBEL
         const sobelShaderModule = this.device.createShaderModule({
             label: 'sobel filter',
             code: asciiSobelCode
@@ -291,14 +321,14 @@ export default class AsciiShader extends ShaderObject {
                 label: 'DoG',
                 passType: 'render',
                 pipeline: this.pipeline,
-                entries: entries,
+                entries: dogEntries,
             },
             {
                 // computes and renders the edge normals
                 label: 'sobel',
                 passType: 'render',
                 pipeline: sobelPipeline,
-                entries: entries,
+                entries: sobelEntries,
             },
             {
                 // computes the average direction of the normals (8x8)

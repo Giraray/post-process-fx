@@ -34,7 +34,7 @@ struct VertexShaderOutput {
 @group(0) @binding(0) var uSampler: sampler;
 @group(0) @binding(1) var uTexture: texture_2d<f32>;
 @group(0) @binding(2) var<uniform> uResolution: vec2<f32>;
-@group(0) @binding(3) var<uniform> uTime: f32;
+@group(0) @binding(3) var<uniform> uSigmaSubtract: f32;
 
 const MATRIX_SIZE : i32 = 11;
 const KERNEL_SIZE : i32 = (MATRIX_SIZE - 1)/2;
@@ -84,7 +84,7 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
 
     //
     // 2. DoG
-    var sigmaSubtract = 3.8;
+    var sigmaSubtract = uSigmaSubtract;
     var sigmaBase = 2.3;
 
     var strongBlur = blur(fragCoord, sigmaSubtract);

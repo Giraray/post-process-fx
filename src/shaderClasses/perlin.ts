@@ -188,10 +188,13 @@ export class PerlinTexture extends TextureObject {
             type: 'color',
             label: 'Color 2',
             id: 'negColor',
-            title: 'Color of negative values',
+            // title: 'Color of negative values',
+            title: "In progress!",
 
             default: '#000000',
             value: '#000000',
+
+            disabled: true,
 
             event: this.handleColor,
         }

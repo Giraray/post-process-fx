@@ -21,6 +21,7 @@ interface NumberConfig extends ConfigInputBase {
     value: Number;
     min?: Number;
     max?: Number;
+    step?: Number;
 }
 
 // enums
@@ -140,6 +141,10 @@ class ObjectBase {
         if(item.title != undefined)
             container.setAttribute('title', item.title);
 
+        if(item.step != undefined) {
+            input.step = '0.1';
+        }
+
         // put elements together and add them to the DOM
         container.appendChild(span);
         const insertedInput = container.appendChild(input);
@@ -239,6 +244,7 @@ class ObjectBase {
         input.type = 'text';
         input.classList.add('border000');
         input.id = item.id;
+        input.disabled = item.disabled;
 
         if(item.max != undefined) 
             input.maxLength = <number>item.max;
@@ -276,6 +282,7 @@ class ObjectBase {
         input.classList.add('border000');
         input.id = item.id;
         input.value = item.value;
+        input.disabled = item.disabled;
 
         if(item.default != undefined)
             input.value = item.default;

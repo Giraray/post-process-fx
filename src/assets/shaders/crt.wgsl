@@ -36,6 +36,7 @@ struct OurVertexShaderOutput {
 @group(0) @binding(2) var<uniform> uResolution: vec2<f32>;
 @group(0) @binding(3) var<uniform> uTime: f32;
 @group(0) @binding(4) var<uniform> uDoDistortion: f32;
+@group(0) @binding(5) var<uniform> uDoFlicker: f32;
 
 const SCAN_BRIGHTNESS = 0.38;
 const MOIRE_OPACITY = 0.9;
@@ -100,7 +101,7 @@ fn modulo(a: f32, b: f32) -> f32 {
     scans = pow(scans, MOIRE_OPACITY);
 	color = color*vec3(0.95 + scans);
 
-    color *= 1.0 + 0.02 * sin(110.0 * uTime); // flickering
+    color *= 1.0 + 0.02 * sin(110.0 * uTime * uDoFlicker); // flickering
 
     // aperture grille
     color *= 1.2 - CRT_OPACITY * vec3(clamp((modulo(fsInput.fragCoord.x, CRT_SPREAD)), 0.0, 1.0));

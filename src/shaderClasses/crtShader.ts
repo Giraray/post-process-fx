@@ -25,6 +25,11 @@ export default class CRTShader extends ShaderObject {
                 targets: [{format: canvasFormat}],
             },
         });
+
+        this.config = this.createConfig();
+        this.distort = <BoolConfig>this.config[0];
+        this.flicker = <BoolConfig>this.config[1];
+        this.initTextureConfig(this.config, this);
     }
 
     handleBool(target: HTMLInputElement, origin: CRTShader, item: BoolConfig) {
@@ -51,7 +56,19 @@ export default class CRTShader extends ShaderObject {
             event: this.handleBool,
         }
 
-        return [distort];
+        const flicker: BoolConfig = {
+            type: 'bool',
+            label: 'Flicker',
+            id: 'flicker',
+            title: 'Subtle TV flickering',
+
+            default: true,
+            value: true,
+
+            event: this.handleBool,
+        }
+
+        return [distort, flicker];
     }
 
     createInstructions(time: number, width: number, height: number) {
@@ -71,7 +88,15 @@ export default class CRTShader extends ShaderObject {
             size:4,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
-        this.device.queue.writeBuffer(doDistortBuffer, 0, new Float32Array([1]));
+        const uDistort = this.distort.value == true ? 1 : 0;
+        this.device.queue.writeBuffer(doDistortBuffer, 0, new Float32Array([uDistort]));
+
+        const doFlickerBuffer = this.device.createBuffer({
+            size:4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+        const uFlicker = this.flicker.value == true ? 1 : 0;
+        this.device.queue.writeBuffer(doFlickerBuffer, 0, new Float32Array([uFlicker]));
 
         const entries = [
             {binding: 0, resource: this.sampler},
@@ -79,6 +104,7 @@ export default class CRTShader extends ShaderObject {
             {binding: 2, resource: { buffer: resBuffer }},
             {binding: 3, resource: { buffer: timeBuffer }},
             {binding: 4, resource: { buffer: doDistortBuffer }},
+            {binding: 5, resource: { buffer: doFlickerBuffer }},
         ];
 
         const instructions: ProgramInstructions = {

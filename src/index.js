@@ -158,8 +158,8 @@ initTexture(createImgTexture(source));
 
 // remove
 const crtShader = new CRTShader(device, canvasFormat);
-// const asciiShader = new AsciiShader(device, canvasFormat);
-initShader(crtShader);
+const asciiShader = new AsciiShader(device, canvasFormat);
+initShader(asciiShader);
 // remove
 
 // SAVE IMAGE
