@@ -16,6 +16,8 @@ export default class AsciiShader extends ShaderObject {
     colorAscii: ColorConfig;
     colorBg: ColorConfig;
     dogStrength: NumberConfig;
+    contrast: NumberConfig;
+    brightness: NumberConfig;
 
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
         super(device, canvasFormat);
@@ -42,6 +44,8 @@ export default class AsciiShader extends ShaderObject {
         this.colorAscii = <ColorConfig>this.config[3];
         this.colorBg = <ColorConfig>this.config[4];
         this.dogStrength = <NumberConfig>this.config[5];
+        this.contrast = <NumberConfig>this.config[6];
+        this.brightness = <NumberConfig>this.config[7];
         this.initTextureConfig(this.config, this);
     }
 
@@ -162,17 +166,45 @@ export default class AsciiShader extends ShaderObject {
             type: 'number',
             label: 'Detail level',
             id: 'dogStrength',
-            title: 'Controls the strength of the differernce of gaussians - No effect if "Draw edges" is false',
+            title: 'Controls the strength of the difference of gaussians - No effect if "Draw edges" is false',
             
-            default: 3.8,
-            value: 3.8,
+            default: 1,
+            value: 1,
 
             step: 0.1,
 
             event: this.handleNumber,
         }
 
-        return [drawEdges, edgeThreshold, bitmapSet, colorAscii, colorBg, dogStrength];
+        const contrast: NumberConfig = {
+            type: 'number',
+            label: 'Contrast',
+            id: 'contrast',
+            title: 'Contrast of the source image',
+            
+            default: 1.0,
+            value: 1.0,
+
+            step: 0.1,
+
+            event: this.handleNumber,
+        }
+
+        const brightness: NumberConfig = {
+            type: 'number',
+            label: 'Brightness',
+            id: 'brightness',
+            title: 'Brightness of the source image - Does not change much without an extraordinary large amount. \nLooks cool when it does though',
+            
+            default: 1.0,
+            value: 1.0,
+
+            step: 0.1,
+
+            event: this.handleNumber,
+        }
+
+        return [drawEdges, edgeThreshold, bitmapSet, colorAscii, colorBg, dogStrength, contrast, brightness];
     }
 
     createBitmap(data: Bitmap): GPUTexture {
@@ -224,6 +256,14 @@ export default class AsciiShader extends ShaderObject {
         const dogStrengthBuffer = this.device.createBuffer({size: 4,usage: uUsage});
         this.device.queue.writeBuffer(dogStrengthBuffer, 0, new Float32Array([<number>this.dogStrength.value]));
 
+        // contrast
+        const contrastBuffer = this.device.createBuffer({size: 4,usage: uUsage});
+        this.device.queue.writeBuffer(contrastBuffer, 0, new Float32Array([<number>this.contrast.value]));
+
+        // DoG brightness
+        const brightnessBuffer = this.device.createBuffer({size: 4,usage: uUsage});
+        this.device.queue.writeBuffer(brightnessBuffer, 0, new Float32Array([<number>this.brightness.value]));
+
         // bitmaps
         const bitmap = this.createBitmap(bitmapVer5_Data);
         const bitmapEdge = this.createBitmap(bitmapEdgeVer1_Data);
@@ -234,6 +274,8 @@ export default class AsciiShader extends ShaderObject {
             {binding: 1, resource: this.texture.createView()},
             {binding: 2, resource: { buffer: resBuffer }},
             {binding: 3, resource: { buffer: dogStrengthBuffer }},
+            {binding: 4, resource: { buffer: contrastBuffer }},
+            {binding: 5, resource: { buffer: brightnessBuffer }},
         ];
 
         // SOBEL
@@ -313,6 +355,8 @@ export default class AsciiShader extends ShaderObject {
             {binding: 6, resource: {buffer: calculateEdgeBoolBuffer}},
             {binding: 7, resource: {buffer: posColorBuffer}},
             {binding: 8, resource: {buffer: negColorBuffer}},
+            {binding: 9, resource: { buffer: contrastBuffer }},
+            {binding: 10, resource: { buffer: brightnessBuffer }},
         ];
 
         const edgePasses: ShaderProgram[] = [

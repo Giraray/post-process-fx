@@ -1,6 +1,9 @@
 A silly website to showcase silly shaders
 
 todo (high priority stuff):
+- Luminance calculations should probably be smoothed out (feels janky with ASCII blocks sometimes)
+- normalize gaussian subtraction config (0-10, or smthn)
+
 - implement user input support for ascii bitmaps (80% done, 15% bitmaps done)
 - CRT configs (ascii is done)
 - Learn SDF and raytracing to make extra cool 3D simulations as textures

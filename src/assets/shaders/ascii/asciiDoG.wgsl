@@ -35,6 +35,8 @@ struct VertexShaderOutput {
 @group(0) @binding(1) var uTexture: texture_2d<f32>;
 @group(0) @binding(2) var<uniform> uResolution: vec2<f32>;
 @group(0) @binding(3) var<uniform> uSigmaSubtract: f32;
+@group(0) @binding(4) var<uniform> uContrast: f32;
+@group(0) @binding(5) var<uniform> uBrightness: f32;
 
 const MATRIX_SIZE : i32 = 11;
 const KERNEL_SIZE : i32 = (MATRIX_SIZE - 1)/2;
@@ -70,7 +72,18 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
     var blur = vec3(0.0);
     for(var i = -kSize; i <= kSize; i++) {
         for(var j = -kSize; j <= kSize; j++) {
-            blur += kernel[kSize + j] * kernel[kSize + i] * textureSample(uTexture, uSampler, (fragCoord + vec2(f32(i), f32(j))) / uResolution).rgb;
+            var texel = textureSample(uTexture, uSampler, (fragCoord + vec2(f32(i), f32(j))) / uResolution);
+
+            // apply contrast + brightness
+            texel.r = mix(0.5, texel.r + uBrightness - 1.0, uContrast);
+            texel.g = mix(0.5, texel.g + uBrightness - 1.0, uContrast);
+            texel.b = mix(0.5, texel.b + uBrightness - 1.0, uContrast);
+
+            texel.r = clamp(0.0, 1.0, texel.r);
+            texel.g = clamp(0.0, 1.0, texel.g);
+            texel.b = clamp(0.0, 1.0, texel.b);
+
+            blur += kernel[kSize + j] * kernel[kSize + i] * texel.rgb;
         }
     }
 
@@ -82,10 +95,15 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
     var fragCoord = fsInput.fragCoord;
     var color = textureSample(uTexture, uSampler, uv);
 
+    // apply contrast + brightness
+    color.r = mix(0.5, color.r + uBrightness - 1.0, uContrast);
+    color.g = mix(0.5, color.g + uBrightness - 1.0, uContrast);
+    color.b = mix(0.5, color.b + uBrightness - 1.0, uContrast);
+
     //
     // 2. DoG
-    var sigmaSubtract = uSigmaSubtract;
     var sigmaBase = 2.3;
+    var sigmaSubtract = sigmaBase + uSigmaSubtract;
 
     var strongBlur = blur(fragCoord, sigmaSubtract);
     var weakBlur = blur(fragCoord, sigmaBase);

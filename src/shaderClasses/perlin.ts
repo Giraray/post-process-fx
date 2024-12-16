@@ -104,6 +104,8 @@ export class PerlinTexture extends TextureObject {
             default: 1,
             value: 1,
 
+            step: 0.1,
+
             event: this.handleNumber,
         };
         
@@ -115,6 +117,8 @@ export class PerlinTexture extends TextureObject {
             
             default: 3,
             value: 3,
+
+            step: 0.1,
 
             event: this.handleNumber,
         }

@@ -37,8 +37,9 @@ struct VertexShaderOutput {
 @group(0) @binding(3) var<uniform> uTime: f32;
 
 const PI : f32 = 3.141592653589793238;
-const s : f32 = 1.0/16.0;
+const radialDiv : f32 = 1.0/16.0;
 
+// honestly not sure why we're getting the luminance of a binary texel
 fn getFragLuma(offsetUV: vec2<f32>) -> f32 {
     var targetColor = textureSample(uTexture, uSampler, offsetUV);
     var fragLuma = targetColor.r * 0.2126 + targetColor.g * 0.7152 + targetColor.b * 0.0722;
@@ -119,6 +120,7 @@ fn getFragLuma(offsetUV: vec2<f32>) -> f32 {
         // get gradient vector
         var t = atan2(gy, gx); // theta
         t = (t/PI) * 0.5 + 0.5;
+        var s = radialDiv;
 
         // green
         if((t >= s && t <= 3.0*s) || (t >= 0.5 + s && t <= 0.5 + 3.0*s)) {
@@ -142,4 +144,5 @@ fn getFragLuma(offsetUV: vec2<f32>) -> f32 {
     }
 
     return vec4(c, 1.0);
+    // return vec4(vec3(g), 1.0);
 }

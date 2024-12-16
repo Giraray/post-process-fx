@@ -45,6 +45,8 @@ export abstract class ShaderObject extends ObjectBase {
     time: number;
     lastUpdate: number;
 
+    dataUrl: string;
+
     static: boolean;
     readonly device: GPUDevice;
     readonly sampler: GPUSampler;
@@ -67,8 +69,7 @@ export abstract class ShaderObject extends ObjectBase {
     abstract createInstructions(...args: any): ProgramInstructions;
 
     /**
-     * This is easily the ugliest function I have ever had the displeasure of writing.
-     * I'm sorry, future me.
+     * This is easily the ugliest function I have ever had the displeasure of writing
      * @param options
      */
     render(options: RenderDescriptor) {
@@ -144,7 +145,7 @@ export abstract class ShaderObject extends ObjectBase {
                 
                 this.device.queue.submit([pass.finish()]);
             }
-            // compute stuff
+            // if shader is compute, then do compute stuff
             else if(shader.passType = 'compute') {
                 const bindGroup = this.device.createBindGroup({
                     layout: shader.pipeline.getBindGroupLayout(0),
