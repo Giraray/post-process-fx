@@ -1,19 +1,24 @@
 import { ShaderObject } from './shaderObject'
 import {NumberConfig, EnumConfig, BoolConfig, RangeConfig, ObjectBase} from './objectBase';
 
+interface Size {
+    width: number;
+    height: number;
+}
+
 export abstract class TextureObject extends ObjectBase {
     shader: ShaderObject | null;
     dataUrl: string;
-
-    readonly device: GPUDevice;
-    readonly canvasFormat: GPUTextureFormat;
-    readonly context: GPUCanvasContext;
+    preferredContainerSize: Size;
+    container: HTMLDivElement;
 
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat, context: GPUCanvasContext) {
-        super();
-        this.device = device;
-        this.canvasFormat = canvasFormat;
+        super(device, canvasFormat);
         this.context = context;
+        this.objectType = 'texture';
+
+        this.container = <HTMLDivElement>document.getElementById('imgDisp');
+        this.preferredContainerSize = {width: this.container.clientWidth, height: this.container.clientHeight};
     }
 
     /**
@@ -37,5 +42,5 @@ export abstract class TextureObject extends ObjectBase {
         this.shader = shader;
     }
 
-    public abstract renderToCanvas(): void
+    public abstract render(): void
 }

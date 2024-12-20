@@ -81,12 +81,12 @@ function initTexture(newTexture) {
     }
 
     canvasTexture.resizeCanvas();
-    canvasTexture.renderToCanvas();
+    canvasTexture.render();
 }
 
 function initShader(shader) {
     canvasTexture.setShader(shader);
-    canvasTexture.renderToCanvas();
+    canvasTexture.render();
 }
 
 function createImgTexture(source) {

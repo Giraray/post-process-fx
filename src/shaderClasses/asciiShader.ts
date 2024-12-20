@@ -4,21 +4,11 @@ import asciiDownscaleCode from '../assets/shaders/ascii/asciiDownscale.wgsl?raw'
 import asciiConvertCode from '../assets/shaders/ascii/asciiConvert.wgsl?raw';
 import {ShaderObject, ProgramInstructions, ShaderProgram} from './shaderObject';
 
-import {NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ColorConfig} from './objectBase';
+import {NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ColorConfig, ConfigInputBase} from './objectBase';
 
 import {Bitmap, testBitmap, bitmapEdgeVer1_Data, bitmapVer4_Data, bitmapVer5_Data } from '../assets/bitmaps/bitmaps';
 
 export default class AsciiShader extends ShaderObject {
-    // config
-    drawEdges: BoolConfig;
-    edgeThreshold: NumberConfig;
-    bitmapSet: NumberConfig;
-    colorAscii: ColorConfig;
-    colorBg: ColorConfig;
-    dogStrength: NumberConfig;
-    contrast: NumberConfig;
-    brightness: NumberConfig;
-
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
         super(device, canvasFormat);
         this.code = asciiDogCode;
@@ -37,63 +27,10 @@ export default class AsciiShader extends ShaderObject {
             }
         });
 
-        this.config = this.createConfig();
-        this.drawEdges = <BoolConfig>this.config[0];
-        this.edgeThreshold = <NumberConfig>this.config[1];
-        this.bitmapSet = <NumberConfig>this.config[2];
-        this.colorAscii = <ColorConfig>this.config[3];
-        this.colorBg = <ColorConfig>this.config[4];
-        this.dogStrength = <NumberConfig>this.config[5];
-        this.contrast = <NumberConfig>this.config[6];
-        this.brightness = <NumberConfig>this.config[7];
+        this.configArray = this.createConfig();
+        this.config = super.sortConfigs(this.configArray);
+
         this.initTextureConfig(this.config, this);
-    }
-
-    handleDrawEdges(target: HTMLInputElement, origin: AsciiShader, item: BoolConfig) {
-        let value = target.checked === true ? true : false;
-        item.value = value;
-
-        origin.render({
-            size: origin.size,
-            canvasFormat: origin.canvasFormat,
-            context: origin.context,
-        });
-    }
-
-    handleNumber(target: HTMLInputElement, origin: AsciiShader, item: NumberConfig) {
-        let value = parseFloat(target.value);
-        if(isNaN(value))
-            value = 0;
-        item.value = value;
-
-        origin.render({
-            size: origin.size,
-            canvasFormat: origin.canvasFormat,
-            context: origin.context,
-        });
-    }
-
-    handleString(target: HTMLInputElement, origin: AsciiShader, item: StringConfig) {
-        let value = target.value;
-        item.value = value;
-
-        origin.render({
-            size: origin.size,
-            canvasFormat: origin.canvasFormat,
-            context: origin.context,
-        });
-    }
-
-    handleColor(target: HTMLInputElement, origin: AsciiShader, item: ColorConfig) {
-        let value = target.value;
-        item.value = value;
-
-        clearTimeout(origin.timeout);
-        origin.render({
-            size: origin.size,
-            canvasFormat: origin.canvasFormat,
-            context: origin.context,
-        });
     }
 
     createConfig(): (NumberConfig | BoolConfig | ColorConfig | StringConfig)[] {
@@ -106,7 +43,7 @@ export default class AsciiShader extends ShaderObject {
             default: true,
             value: true,
 
-            event: this.handleDrawEdges,
+            event: this.handleBoolConfig,
         }
 
         const edgeThreshold: NumberConfig = { // todo rangeConfig
@@ -120,7 +57,7 @@ export default class AsciiShader extends ShaderObject {
             min: 0,
             max: 64,
 
-            event: this.handleNumber,
+            event: this.handleNumberConfig,
         }
 
         const bitmapSet: StringConfig = { // todo indepth user explanation
@@ -135,7 +72,7 @@ export default class AsciiShader extends ShaderObject {
 
             disabled: true,
 
-            event: this.handleString,
+            event: this.handleStringConfig,
         }
 
         const colorAscii: ColorConfig = {
@@ -147,7 +84,7 @@ export default class AsciiShader extends ShaderObject {
             default: "#ffffff",
             value: "#ffffff",
 
-            event: this.handleColor,
+            event: this.handleColorConfig,
         }
 
         const colorBg: ColorConfig = {
@@ -159,7 +96,7 @@ export default class AsciiShader extends ShaderObject {
             default: "#000000",
             value: "#000000",
 
-            event: this.handleColor,
+            event: this.handleColorConfig,
         }
 
         const dogStrength: NumberConfig = {
@@ -173,7 +110,7 @@ export default class AsciiShader extends ShaderObject {
 
             step: 0.1,
 
-            event: this.handleNumber,
+            event: this.handleNumberConfig,
         }
 
         const contrast: NumberConfig = {
@@ -187,7 +124,7 @@ export default class AsciiShader extends ShaderObject {
 
             step: 0.1,
 
-            event: this.handleNumber,
+            event: this.handleNumberConfig,
         }
 
         const brightness: NumberConfig = {
@@ -201,10 +138,10 @@ export default class AsciiShader extends ShaderObject {
 
             step: 0.1,
 
-            event: this.handleNumber,
+            event: this.handleNumberConfig,
         }
 
-        return [drawEdges, edgeThreshold, bitmapSet, colorAscii, colorBg, dogStrength, contrast, brightness];
+        return [drawEdges, edgeThreshold, dogStrength, bitmapSet, colorAscii, colorBg, contrast, brightness];
     }
 
     createBitmap(data: Bitmap): GPUTexture {
@@ -227,6 +164,15 @@ export default class AsciiShader extends ShaderObject {
     }
 
     createInstructions(time: number, width: number, height: number): ProgramInstructions {
+        const drawEdges = this.findIndex('drawEdges');
+        const edgeThreshold = this.findIndex('edgeThreshold');
+        const bitmapSet = this.findIndex('bitmapSet');
+        const colorAscii = this.findIndex('colorAscii');
+        const colorBg = this.findIndex('colorBg');
+        const dogStrength = this.findIndex('dogStrength');
+        const contrast = this.findIndex('contrast');
+        const brightness = this.findIndex('brightness');
+
         // buffer for compute
         const colorBuffer = this.device.createTexture({
             size: {width,height},
@@ -237,32 +183,32 @@ export default class AsciiShader extends ShaderObject {
 
         // CONFIG UNIFORMS
         // edge threshold
-        const uUsage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
-        const threshBuffer = this.device.createBuffer({size: 4, usage: uUsage});
-        this.device.queue.writeBuffer(threshBuffer, 0, new Float32Array([<number>this.edgeThreshold.value]))
+        const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
+        const threshBuffer = this.device.createBuffer({size: 4, usage: usage});
+        this.device.queue.writeBuffer(threshBuffer, 0, new Float32Array([<number>this.config[edgeThreshold].value]))
 
         // resolution buffer
-        const resBuffer = this.device.createBuffer({size:8, usage: uUsage});
+        const resBuffer = this.device.createBuffer({size:8, usage: usage});
         this.device.queue.writeBuffer(resBuffer, 0, new Float32Array([width, height]));
 
         // colors
-        const posColorBuffer = this.device.createBuffer({size: 12,usage: uUsage});
-        this.device.queue.writeBuffer(posColorBuffer, 0, new Float32Array(<number[]>this.hexToRgb(this.colorAscii.value)));
+        const posColorBuffer = this.device.createBuffer({size: 12,usage: usage});
+        this.device.queue.writeBuffer(posColorBuffer, 0, new Float32Array(<number[]>this.hexToRgb(<string>this.config[colorAscii].value)));
 
-        const negColorBuffer = this.device.createBuffer({size: 12,usage: uUsage});
-        this.device.queue.writeBuffer(negColorBuffer, 0, new Float32Array(<number[]>this.hexToRgb(this.colorBg.value)));
+        const negColorBuffer = this.device.createBuffer({size: 12,usage: usage});
+        this.device.queue.writeBuffer(negColorBuffer, 0, new Float32Array(<number[]>this.hexToRgb(<string>this.config[colorBg].value)));
 
         // DoG strength
-        const dogStrengthBuffer = this.device.createBuffer({size: 4,usage: uUsage});
-        this.device.queue.writeBuffer(dogStrengthBuffer, 0, new Float32Array([<number>this.dogStrength.value]));
+        const dogStrengthBuffer = this.device.createBuffer({size: 4,usage: usage});
+        this.device.queue.writeBuffer(dogStrengthBuffer, 0, new Float32Array([<number>this.config[dogStrength].value]));
 
         // contrast
-        const contrastBuffer = this.device.createBuffer({size: 4,usage: uUsage});
-        this.device.queue.writeBuffer(contrastBuffer, 0, new Float32Array([<number>this.contrast.value]));
+        const contrastBuffer = this.device.createBuffer({size: 4,usage: usage});
+        this.device.queue.writeBuffer(contrastBuffer, 0, new Float32Array([<number>this.config[contrast].value]));
 
         // DoG brightness
-        const brightnessBuffer = this.device.createBuffer({size: 4,usage: uUsage});
-        this.device.queue.writeBuffer(brightnessBuffer, 0, new Float32Array([<number>this.brightness.value]));
+        const brightnessBuffer = this.device.createBuffer({size: 4,usage: usage});
+        this.device.queue.writeBuffer(brightnessBuffer, 0, new Float32Array([<number>this.config[brightness].value]));
 
         // bitmaps
         const bitmap = this.createBitmap(bitmapVer5_Data);
@@ -394,7 +340,7 @@ export default class AsciiShader extends ShaderObject {
             },
         ];
 
-        if(this.drawEdges.value === true) {
+        if(this.config[drawEdges].value === true) {
             passes.unshift(edgePasses[0], edgePasses[1], edgePasses[2]);
         }
 

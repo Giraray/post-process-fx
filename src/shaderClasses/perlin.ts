@@ -21,25 +21,12 @@ interface Size {
  */
 export class PerlinTexture extends TextureObject {
     time: number = 0;
-    size: Size;
     seed: number;
 
     pipeline: GPURenderPipeline;
     bindGroup: GPUBindGroup;
 
-    timeout: ReturnType<typeof setTimeout>;
-
     lastUpdate: number;
-
-    //config
-    style: EnumConfig;
-    intensity: NumberConfig;
-    gridSize: NumberConfig;
-    animate: BoolConfig;
-    speed: NumberConfig;
-    fractals: NumberConfig;
-    posColor: ColorConfig;
-    negColor: ColorConfig;
 
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat, context: GPUCanvasContext, size: Size) {
         super(device, canvasFormat, context);
@@ -47,35 +34,10 @@ export class PerlinTexture extends TextureObject {
         this.seed = Math.random()*100000;
         this.lastUpdate = Date.now();
 
-        this.config = this.createConfig();
-        this.intensity = <NumberConfig>this.config[0];
-        this.gridSize = <NumberConfig>this.config[1];
-        this.style = <EnumConfig>this.config[2];
-        this.fractals = <NumberConfig>this.config[3];
-        this.animate = <BoolConfig>this.config[4];
-        this.speed = <NumberConfig>this.config[5];
-        this.posColor = <ColorConfig>this.config[6];
-        this.negColor = <ColorConfig>this.config[7];
+        this.configArray = this.createConfig();
+        this.config = this.sortConfigs(this.configArray)
 
         this.initTextureConfig(this.config, this);
-    }
-
-    handleNumber(target: HTMLInputElement, origin: PerlinTexture, item: NumberConfig) {
-        let value = parseFloat(target.value);
-        if(isNaN(value))
-            value = 0;
-        item.value = value;
-
-        clearTimeout(origin.timeout);
-        origin.renderToCanvas();
-    }
-
-    handleStyle(target: HTMLInputElement, origin: PerlinTexture, item: EnumConfig) {
-        let value = target.value;
-        item.value = value;
-
-        clearTimeout(origin.timeout);
-        origin.renderToCanvas();
     }
 
     handleAnimate(target: HTMLInputElement, origin: PerlinTexture, item: BoolConfig) {
@@ -83,15 +45,7 @@ export class PerlinTexture extends TextureObject {
         item.value = value;
 
         clearTimeout(origin.timeout);
-        origin.renderToCanvas();
-    }
-
-    handleColor(target: HTMLInputElement, origin: PerlinTexture, item: ColorConfig) {
-        let value = target.value;
-        item.value = value;
-
-        clearTimeout(origin.timeout);
-        origin.renderToCanvas();
+        origin.render();
     }
 
     createConfig(): (NumberConfig | EnumConfig | BoolConfig | ColorConfig)[] {
@@ -105,8 +59,9 @@ export class PerlinTexture extends TextureObject {
             value: 1,
 
             step: 0.1,
+            clearTimeout: true,
 
-            event: this.handleNumber,
+            event: this.handleNumberConfig,
         };
         
         const gridSize: NumberConfig = {
@@ -120,7 +75,7 @@ export class PerlinTexture extends TextureObject {
 
             step: 0.1,
 
-            event: this.handleNumber,
+            event: this.handleNumberConfig,
         }
 
         const style: EnumConfig = {
@@ -137,7 +92,7 @@ export class PerlinTexture extends TextureObject {
                 {label: 'Normalized', id: 'normalized'},
             ],
 
-            event: this.handleStyle
+            event: this.handleEnumConfig
         }
 
         const fractals: NumberConfig = {
@@ -149,7 +104,7 @@ export class PerlinTexture extends TextureObject {
             default: 5,
             value: 5,
 
-            event: this.handleNumber,
+            event: this.handleNumberConfig,
         }
 
         const animate: BoolConfig = {
@@ -173,7 +128,7 @@ export class PerlinTexture extends TextureObject {
             default: 1,
             value: 1,
 
-            event: this.handleNumber,
+            event: this.handleNumberConfig,
         }
 
         const negColor: ColorConfig = {
@@ -185,7 +140,7 @@ export class PerlinTexture extends TextureObject {
             default: '#ffffff',
             value: '#ffffff',
 
-            event: this.handleColor,
+            event: this.handleColorConfig,
         }
 
         const posColor: ColorConfig = {
@@ -200,7 +155,7 @@ export class PerlinTexture extends TextureObject {
 
             disabled: true,
 
-            event: this.handleColor,
+            event: this.handleColorConfig,
         }
 
         return [intensity, gridSize, style, fractals, animate, speed, negColor, posColor];
@@ -215,7 +170,7 @@ export class PerlinTexture extends TextureObject {
             this.lastUpdate = now;
             this.time -= delta/1000;
 
-            requestAnimationFrame(this.renderToCanvas.bind(this));
+            requestAnimationFrame(this.render.bind(this));
         }, 1000 / 30);
     }
 
@@ -318,10 +273,19 @@ export class PerlinTexture extends TextureObject {
         });
 
         // BINDINGS
+        const intensity = this.findIndex('intensity');
+        const style = this.findIndex('style')
+        const gridSize = this.findIndex('gridSize');
+        const fractals = this.findIndex('fractals');
+        const animate = this.findIndex('animate');
+        const speed = this.findIndex('speed');
+        const negColor = this.findIndex('negColor');
+        const posColor = this.findIndex('posColor');
+        const config = this.config;
 
         // style options
         let styleValue: number;
-        switch (this.style.value) {
+        switch (this.config[style].value) {
             case 'fractal':
                 styleValue = 1;
                 break;
@@ -337,46 +301,46 @@ export class PerlinTexture extends TextureObject {
                 break;
         }
 
-        const usage_UniformCopy = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
+        const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
 
         // style
-        const styleBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
+        const styleBuffer = device.createBuffer({size: 4,usage: usage});
         device.queue.writeBuffer(styleBuffer, 0, new Int32Array([styleValue]));
 
         // resolution
-        const resBuffer = device.createBuffer({size:8,usage: usage_UniformCopy});
+        const resBuffer = device.createBuffer({size:8,usage: usage});
         device.queue.writeBuffer(resBuffer, 0, new Float32Array([this.size.width, this.size.height]));
 
         // seed
-        const seedBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
+        const seedBuffer = device.createBuffer({size: 4,usage: usage});
         device.queue.writeBuffer(seedBuffer, 0, new Float32Array([this.seed]));
 
         // gridSize
-        const gridBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
-        device.queue.writeBuffer(gridBuffer, 0, new Float32Array([<number>this.gridSize.value])); // bruh idfk what im doing man
+        const gridBuffer = device.createBuffer({size: 4,usage: usage});
+        device.queue.writeBuffer(gridBuffer, 0, new Float32Array([<number>config[gridSize].value]));
 
         // intensity
-        const intensityBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
-        device.queue.writeBuffer(intensityBuffer, 0, new Float32Array([<number>this.intensity.value]));
+        const intensityBuffer = device.createBuffer({size: 4,usage: usage});
+        device.queue.writeBuffer(intensityBuffer, 0, new Float32Array([<number>config[intensity].value]));
 
         // time
-        const timeBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
+        const timeBuffer = device.createBuffer({size: 4,usage: usage});
         device.queue.writeBuffer(timeBuffer, 0, new Float32Array([this.time]));
 
         // speed
-        const speedBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
-        device.queue.writeBuffer(speedBuffer, 0, new Float32Array([<number>this.speed.value]));
+        const speedBuffer = device.createBuffer({size: 4,usage: usage});
+        device.queue.writeBuffer(speedBuffer, 0, new Float32Array([<number>config[speed].value]));
 
         // fractals
-        const fractalsBuffer = device.createBuffer({size: 4,usage: usage_UniformCopy});
-        device.queue.writeBuffer(fractalsBuffer, 0, new Float32Array([<number>this.fractals.value]));
+        const fractalsBuffer = device.createBuffer({size: 4,usage: usage});
+        device.queue.writeBuffer(fractalsBuffer, 0, new Float32Array([<number>config[fractals].value]));
 
         // colors
-        const posColorBuffer = device.createBuffer({size: 12,usage: usage_UniformCopy});
-        device.queue.writeBuffer(posColorBuffer, 0, new Float32Array(<number[]>this.hexToRgb(this.posColor.value)));
+        const posColorBuffer = device.createBuffer({size: 12,usage: usage});
+        device.queue.writeBuffer(posColorBuffer, 0, new Float32Array(<number[]>this.hexToRgb(<string>config[posColor].value)));
 
-        const negColorBuffer = device.createBuffer({size: 12,usage: usage_UniformCopy});
-        device.queue.writeBuffer(negColorBuffer, 0, new Float32Array(<number[]>this.hexToRgb(this.negColor.value)));
+        const negColorBuffer = device.createBuffer({size: 12,usage: usage});
+        device.queue.writeBuffer(negColorBuffer, 0, new Float32Array(<number[]>this.hexToRgb(<string>config[negColor].value)));
 
         this.bindGroup = device.createBindGroup({
             label: 'perlin bindgroup',
@@ -435,7 +399,7 @@ export class PerlinTexture extends TextureObject {
         canvas.style.height = this.size.height + 'px';
     }
 
-    public renderToCanvas() {
+    public render() {
         // render texture
         this.updateTexture();
 
@@ -502,7 +466,7 @@ export class PerlinTexture extends TextureObject {
 
         this.dataUrl = (<HTMLCanvasElement>this.context.canvas).toDataURL('image/png');
 
-        if(this.animate.value === true) {
+        if(this.config[this.findIndex('animate')].value === true) {
             this.setTimer();
         }
     }

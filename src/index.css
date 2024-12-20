@@ -95,7 +95,6 @@ canvas {
 }
 
 .config-title {
-    height: 12%;
     min-height: fit-content;
 
     display: flex;
@@ -106,6 +105,7 @@ canvas {
     font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
     font-size: 1.5rem;
     color: #ddd;
+    margin: 0 0 10px 0;
 }
 
 .options {

@@ -1,8 +1,6 @@
 import shaderCode from '../assets/shaders/defaultShader.wgsl?raw';
 import {TextureObject} from './textureObject';
-import { imgTextureConfig } from '../createConfig';
 import {NumberConfig, EnumConfig, BoolConfig, RangeConfig} from './objectBase';
-import { ShaderObject } from './shaderObject';
 
 interface Size {
     width: number,
@@ -15,27 +13,22 @@ export class ImgTexture extends TextureObject {
     readonly canvasFormat: GPUTextureFormat;
     readonly device: GPUDevice;
     source: ImageBitmap;
-    container: HTMLDivElement;
     sizeMultiplier: Size;
 
     bindGroup: GPUBindGroup;
     pipeline: GPURenderPipeline;
 
-    // config
-    resize: BoolConfig;
-
     constructor(
         device: GPUDevice, canvasFormat: GPUTextureFormat, context: GPUCanvasContext, source: ImageBitmap
     ) {
         super(device, canvasFormat, context);
-        this.container = <HTMLDivElement>document.getElementById('imgDisp');
         this.sizeMultiplier = {width: 1,height: 1,};
         this.source = source;
 
-        this.config = this.createConfig();
-        this.resize = <BoolConfig>this.config[0];
+        this.configArray = this.createConfig();
+        this.config = this.sortConfigs(this.configArray);
 
-        this.resizeDimensions(this.resize.value);
+        this.resizeDimensions(<boolean>this.config[this.findIndex('resize')].value);
         this.initTextureConfig(this.config, this);
     }
 
@@ -45,7 +38,7 @@ export class ImgTexture extends TextureObject {
 
         origin.resizeDimensions(value);
         origin.resizeCanvas();
-        origin.renderToCanvas();
+        origin.render();
     }
 
     createConfig(): [BoolConfig] {
@@ -64,6 +57,9 @@ export class ImgTexture extends TextureObject {
     }
 
     resizeDimensions(resize: boolean) {
+        const w = this.preferredContainerSize.width;
+        const h = this.preferredContainerSize.height;
+
         if(resize === false) {
             this.sizeMultiplier = {
                 width: 1,
@@ -72,8 +68,6 @@ export class ImgTexture extends TextureObject {
         }
         else {
             const source = this.source;
-            const w = this.container.clientWidth;
-            const h = this.container.clientHeight;
             
             if(source.width/source.height > w/h) {
                 this.sizeMultiplier.height = w / source.width;
@@ -146,7 +140,7 @@ export class ImgTexture extends TextureObject {
         this.pipeline = pipeline;
     }
 
-    public renderToCanvas() {
+    public render() {
         this.updateTexture();
 
         // create renderTarget if a shader is to be applied; otherwise use context

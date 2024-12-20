@@ -1,22 +1,22 @@
-import {ObjectBase, NumberConfig, EnumConfig, BoolConfig, RangeConfig} from './objectBase';
+import {ObjectBase, NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ColorConfig, ConfigInputBase, RenderDescriptor} from './objectBase';
 
 interface Size {
     width: number,
     height: number,
 }
 
-interface RenderDescriptor {
-    size: Size;
-    canvasFormat: GPUTextureFormat,
-    context?: GPUCanvasContext;
-    finalRender?: boolean;
-    renderTarget?: GPUTexture
+interface ShaderMetaData {
+    imgUrl: string;
+    name: string;
 }
 
 type ShaderType =
     'render' |
     'compute'
 
+/**
+ * A set of shaders to be executed in a pass.
+ */
 export interface ShaderProgram {
     label: string;
     passType: ShaderType;
@@ -25,16 +25,15 @@ export interface ShaderProgram {
     workgroupSize?: number;
 }
 
+/**
+ * Provides rendering information and order for shader passes.
+ */
 export interface ProgramInstructions {
     label: string;
     passes: Array<ShaderProgram>;
 }
 
 export abstract class ShaderObject extends ObjectBase {
-    canvasFormat: GPUTextureFormat; // YUUUUCK!!!!!!!!!!!!
-    context: GPUCanvasContext;
-    size: Size;
-
     code: string;
     shaderModule: GPUShaderModule;
     pipeline: GPURenderPipeline;
@@ -46,16 +45,15 @@ export abstract class ShaderObject extends ObjectBase {
     lastUpdate: number;
 
     dataUrl: string;
+    metaData: ShaderMetaData; // TODO
 
     static: boolean;
-    readonly device: GPUDevice;
     readonly sampler: GPUSampler;
 
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
-        super();
-        this.device = device;
-        this.canvasFormat = canvasFormat;
+        super(device, canvasFormat);
 
+        this.objectType = 'shader';
         this.static = false;
 
         this.sampler = device.createSampler({
@@ -69,8 +67,8 @@ export abstract class ShaderObject extends ObjectBase {
     abstract createInstructions(...args: any): ProgramInstructions;
 
     /**
-     * This is easily the ugliest function I have ever had the displeasure of writing
-     * @param options
+     * Easily the ugliest function I have ever had the displeasure of writing
+     * @param options Provides information about the canvas. Idk man. Gotta replace it with something better
      */
     render(options: RenderDescriptor) {
         const w = options.size.width;
@@ -145,7 +143,7 @@ export abstract class ShaderObject extends ObjectBase {
                 
                 this.device.queue.submit([pass.finish()]);
             }
-            // if shader is compute, then do compute stuff
+            // if shader is compute, then do a compute pass
             else if(shader.passType = 'compute') {
                 const bindGroup = this.device.createBindGroup({
                     layout: shader.pipeline.getBindGroupLayout(0),

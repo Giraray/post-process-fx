@@ -1,3 +1,6 @@
+/**
+ * Legacy. Should be deleted when range input is implemented
+ */
 export const perlinTextureConfig: string = `
     <!-- number input -->
     <div class="option-container option-container_input border444" title="Increases contrast">

@@ -5,6 +5,7 @@ interface ConfigInputBase {
     title: string; // user hints
     disabled?: boolean;
     event: Function;
+    clearTimeout?: boolean; // if object is animated
 }
 
 type ConfigType = 
@@ -65,11 +66,41 @@ interface ColorConfig extends ConfigInputBase {
     value: string
 }
 
-class ObjectBase {
-    /**
-     * An array of configuration instructions.
-     */
-    config: (NumberConfig | EnumConfig | BoolConfig | StringConfig | ColorConfig)[];
+interface Size {
+    width: number;
+    height: number;
+}
+
+/**
+ * TODO: remove and replace with something less weird
+ */
+export interface RenderDescriptor {
+    size: Size;
+    canvasFormat: GPUTextureFormat,
+    context?: GPUCanvasContext;
+    finalRender?: boolean;
+    renderTarget?: GPUTexture
+}
+
+export type ObjectType = |
+    'shader' |
+    'texture'
+
+abstract class ObjectBase {
+    objectType: ObjectType;
+    size: Size;
+    config: Array<NumberConfig | EnumConfig | StringConfig | BoolConfig | ColorConfig | RangeConfig>;
+    configArray: Array<ConfigInputBase>;
+    timeout: ReturnType<typeof setTimeout>;
+
+    canvasFormat: GPUTextureFormat;
+    context: GPUCanvasContext;
+    readonly device: GPUDevice;
+
+    constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
+        this.canvasFormat = canvasFormat;
+        this.device = device;
+    }
 
     /**
      * Replaces existing configuration options with newly generated ones. Typically to be called when creating 
@@ -77,7 +108,7 @@ class ObjectBase {
      * @param config A ConfigObject containing the blueprint for the configurations to be generated.
      * @param origin The parent TextureObject or ShaderObject.
      */
-    public initTextureConfig(config: (NumberConfig | EnumConfig | BoolConfig | ColorConfig | StringConfig)[], origin: ObjectBase) {
+    public initTextureConfig(config: Array<ConfigInputBase>, origin: ObjectBase) {
         const objectType = Object.getPrototypeOf(Object.getPrototypeOf(origin)).constructor.name; // "TextureObject" or "Shader Object"
         let optionsDiv: HTMLDivElement;
         if(objectType === 'TextureObject')
@@ -312,6 +343,105 @@ class ObjectBase {
     
         return [r, g, b];
     }
+
+    /**
+     * Places configs generated in a createConfig() into the object's config property.
+     * Makes it a bit easier to adjust config index positions compared to my previous solution.
+     * @param configs Array containing `config` objects
+     */
+    sortConfigs(configs: Array<ConfigInputBase>): Array<NumberConfig | EnumConfig | StringConfig | BoolConfig | ColorConfig | RangeConfig> {
+        let returnArray = [];
+
+        for(let i = 0; i < configs.length; i++) {
+            Object.keys(configs).forEach(key => {
+                if (configs[key].id === configs[i].id) {
+
+                    returnArray[i] = configs[key];
+
+                    if(i < configs.length - 1) {
+                        configs.unshift();
+                    }
+
+                }
+            });
+        }
+        return returnArray;
+    }
+
+    findIndex(id: string): number {
+        let index = -1;
+        Object.keys(this.configArray).forEach(key => {
+            if (this.configArray[key].id === id) {
+                index = parseInt(key);
+            }
+        });
+        return index;
+    }
+
+    public abstract render(RenderDescriptor): void
+
+    // config events. TextureObject needs its own, even though the functions are indentical
+    handleNumberConfig(target: HTMLInputElement, origin: ObjectBase, item: NumberConfig) {
+        let value = parseFloat(target.value);
+        if(isNaN(value))
+            value = 0;
+        item.value = value;
+
+        // if(origin.objectType == 'texture') {
+        //     clearTimeout(origin.timeout);
+        // }
+
+        origin.render({
+            size: origin.size,
+            canvasFormat: origin.canvasFormat,
+            context: origin.context,
+        });
+    }
+
+    handleStringConfig(target: HTMLInputElement, origin: ObjectBase, item: StringConfig) {
+        let value = target.value;
+        item.value = value;
+
+        origin.render({
+            size: origin.size,
+            canvasFormat: origin.canvasFormat,
+            context: origin.context,
+        });
+    }
+
+    handleColorConfig(target: HTMLInputElement, origin: ObjectBase, item: ColorConfig) {
+        let value = target.value;
+        item.value = value;
+
+        clearTimeout(origin.timeout);
+        origin.render({
+            size: origin.size,
+            canvasFormat: origin.canvasFormat,
+            context: origin.context,
+        });
+    }
+
+    handleBoolConfig(target: HTMLInputElement, origin: ObjectBase, item: BoolConfig) {
+        let value = target.checked === true ? true : false;
+        item.value = value;
+
+        origin.render({
+            size: origin.size,
+            canvasFormat: origin.canvasFormat,
+            context: origin.context,
+        });
+    }
+
+    handleEnumConfig(target: HTMLInputElement, origin: ObjectBase, item: EnumConfig) {
+        let value = target.value;
+        item.value = value;
+
+        origin.render({
+            size: origin.size,
+            canvasFormat: origin.canvasFormat,
+            context: origin.context,
+        });
+    }
 }
 
-export {NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ColorConfig, ObjectBase}
+export {ConfigInputBase, NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ColorConfig, ObjectBase}

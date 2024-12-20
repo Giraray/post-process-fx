@@ -3,10 +3,7 @@ import shaderCode from '../assets/shaders/crt.wgsl?raw'
 import {NumberConfig, EnumConfig, BoolConfig, RangeConfig, ColorConfig} from './objectBase';
 
 export default class CRTShader extends ShaderObject {
-    // config
-    distort: BoolConfig;
-    flicker: BoolConfig;
-    moireOpacity: NumberConfig;
+    moireOpacity: NumberConfig; // TODO
 
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
         super(device, canvasFormat);
@@ -26,34 +23,23 @@ export default class CRTShader extends ShaderObject {
             },
         });
 
-        this.config = this.createConfig();
-        this.distort = <BoolConfig>this.config[0];
-        this.flicker = <BoolConfig>this.config[1];
+        this.configArray = this.createConfig();
+        this.config = super.sortConfigs(this.configArray);
+
         this.initTextureConfig(this.config, this);
-    }
-
-    handleBool(target: HTMLInputElement, origin: CRTShader, item: BoolConfig) {
-        let value = target.checked === true ? true : false;
-        item.value = value;
-
-        origin.render({
-            size: origin.size,
-            canvasFormat: origin.canvasFormat,
-            context: origin.context,
-        });
     }
 
     createConfig(): (NumberConfig | BoolConfig)[] {
         const distort: BoolConfig = {
             type: 'bool',
             label: 'Distort UV',
-            id: 'distortUV',
+            id: 'distort',
             title: 'Distorts the texture',
 
             default: true,
             value: true,
 
-            event: this.handleBool,
+            event: this.handleBoolConfig,
         }
 
         const flicker: BoolConfig = {
@@ -65,38 +51,34 @@ export default class CRTShader extends ShaderObject {
             default: true,
             value: true,
 
-            event: this.handleBool,
+            event: this.handleBoolConfig,
         }
 
         return [distort, flicker];
     }
 
     createInstructions(time: number, width: number, height: number) {
-        const timeBuffer = this.device.createBuffer({
-            size: 8,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
+        const config = this.config;
+        const distort = this.findIndex('distort');
+        const flicker = this.findIndex('flicker');
+
+        const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
+
+        // time
+        const timeBuffer = this.device.createBuffer({size: 8,usage});
         this.device.queue.writeBuffer(timeBuffer, 0, new Float32Array([time]));
 
-        const resBuffer = this.device.createBuffer({
-            size:8,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
+        // resolution
+        const resBuffer = this.device.createBuffer({size:8,usage});
         this.device.queue.writeBuffer(resBuffer, 0, new Float32Array([width, height]));
 
-        const doDistortBuffer = this.device.createBuffer({
-            size:4,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
-        const uDistort = this.distort.value == true ? 1 : 0;
-        this.device.queue.writeBuffer(doDistortBuffer, 0, new Float32Array([uDistort]));
+        // distortBool
+        const doDistortBuffer = this.device.createBuffer({size:4,usage});
+        this.device.queue.writeBuffer(doDistortBuffer, 0, new Float32Array([Number(config[distort].value)]));
 
-        const doFlickerBuffer = this.device.createBuffer({
-            size:4,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
-        const uFlicker = this.flicker.value == true ? 1 : 0;
-        this.device.queue.writeBuffer(doFlickerBuffer, 0, new Float32Array([uFlicker]));
+        // flickerBool
+        const doFlickerBuffer = this.device.createBuffer({size:4,usage});
+        this.device.queue.writeBuffer(doFlickerBuffer, 0, new Float32Array([Number(config[flicker].value)]));
 
         const entries = [
             {binding: 0, resource: this.sampler},
