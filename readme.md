@@ -1,11 +1,13 @@
 A silly website to showcase silly shaders
 
 todo (high priority stuff):
+- changing img texture when previous image was original size will affect next preferredContainerSize, messing up resize functionality
 - Luminance calculations should probably be smoothed out (feels janky with ASCII blocks sometimes)
-- normalize gaussian subtraction config (0-10, or smthn)
+- Improve the ASCII shader algorithm based on learnings from DoG filter implementation
+- dataUrl only updates when texture is changed or adjusted
 
 - implement user input support for ascii bitmaps (80% done, 15% bitmaps done)
-- CRT configs (ascii is done)
+- CRT configs (maybe some tonemapping options?)
 - Learn SDF and raytracing to make extra cool 3D simulations as textures
 - Halftone/comic book shader :))))
 - gif/video support for ImgTexture?

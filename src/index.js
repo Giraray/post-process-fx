@@ -1,6 +1,6 @@
 // images
-import imgPath from './assets/sukunaiPadKid.jpg';
-import defaultImg from './assets/eliasoutsidewhoa.jpg';
+import imgPath from './assets/mrcleanblehhhhhh.png';
+import defaultImg from './assets/thumbnails/eliasTN.png';
 import circleImg from './assets/Red-Circle-PNG-Images-HD.png';
 
 // textures
@@ -12,6 +12,7 @@ import {ImgTexture} from './shaderClasses/img.ts';
 import CRTShader from './shaderClasses/crtShader.ts'
 import AsciiShader from './shaderClasses/asciiShader.ts'
 import TestShader from './shaderClasses/test.ts'
+import DoGFilter from './shaderClasses/dogShader.ts'
 
 if(!navigator.gpu) {
     alert('WebGPU is currently only supported in Chromium based browsers.')
@@ -32,8 +33,6 @@ context.configure({
     device: device,
     format: canvasFormat,
 });
-
-// let's do this. *breaks fingers*
 
 /**
  * The texture that is displayed onto the canvas through initTexture().
@@ -135,6 +134,7 @@ perlinSelect.addEventListener('click', function() {
 //
 const crtSelect = document.getElementById('crtShader');
 const asciiSelect = document.getElementById('asciiShader');
+const dogSelect = document.getElementById('dogFilter');
 
 // crt shader
 crtSelect.addEventListener('click', function() {
@@ -150,16 +150,18 @@ asciiSelect.addEventListener('click', function() {
     initShader(newShader);
 })
 
-// remove
-const perlinTexture = new PerlinTexture(device, canvasFormat, context, divSize);
-// remove
+// DoG filter
+dogSelect.addEventListener('click', function() {
+    const dogShader = new DoGFilter(device, canvasFormat);
+    const newShader = dogShader;
+    initShader(newShader);
+})
 
 initTexture(createImgTexture(source));
 
-// remove
-const crtShader = new CRTShader(device, canvasFormat);
-const asciiShader = new AsciiShader(device, canvasFormat);
-initShader(asciiShader);
+// add default shaders for testing here vvvvvvv
+const dogShader = new DoGFilter(device, canvasFormat);
+initShader(dogShader);
 // remove
 
 // SAVE IMAGE
@@ -190,7 +192,7 @@ function processInput() {
             const newTexture = createImgTexture(source);
             initTexture(newTexture);
         }
-        catch(error) {
+        catch(error) { // todo: figure out wtf is going on here
             alert('File cannot be over 10 MB.. for some reason. \n\n Uploaded file was ' + Math.round(file.size/10000)/100 + ' MB');
             console.error('Error: ' + error.message);
         }

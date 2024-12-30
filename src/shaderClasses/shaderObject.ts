@@ -5,11 +5,6 @@ interface Size {
     height: number,
 }
 
-interface ShaderMetaData {
-    imgUrl: string;
-    name: string;
-}
-
 type ShaderType =
     'render' |
     'compute'
@@ -45,7 +40,6 @@ export abstract class ShaderObject extends ObjectBase {
     lastUpdate: number;
 
     dataUrl: string;
-    metaData: ShaderMetaData; // TODO
 
     static: boolean;
     readonly sampler: GPUSampler;

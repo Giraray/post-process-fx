@@ -31,6 +31,11 @@ export default class AsciiShader extends ShaderObject {
         this.config = super.sortConfigs(this.configArray);
 
         this.initTextureConfig(this.config, this);
+
+        this.metadata = {
+            name: 'ASCII shader',
+        }
+        this.updateMetadata();
     }
 
     createConfig(): (NumberConfig | BoolConfig | ColorConfig | StringConfig)[] {

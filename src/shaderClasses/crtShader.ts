@@ -27,6 +27,13 @@ export default class CRTShader extends ShaderObject {
         this.config = super.sortConfigs(this.configArray);
 
         this.initTextureConfig(this.config, this);
+
+        this.metadata = {
+            name: 'CRT Filter',
+            imgUrl: '',
+            description: '',
+        }
+        this.updateMetadata();
     }
 
     createConfig(): (NumberConfig | BoolConfig)[] {
@@ -92,7 +99,7 @@ export default class CRTShader extends ShaderObject {
         const instructions: ProgramInstructions = {
             label: 'ASCII shader instructions',
             passes: [{
-                label: 'DoG',
+                label: 'CRT',
                 passType: 'render',
                 pipeline: this.pipeline,
                 entries: entries,

@@ -84,7 +84,13 @@ export interface RenderDescriptor {
 
 export type ObjectType = |
     'shader' |
-    'texture'
+    'texture';
+
+interface ShaderMetaData {
+    imgUrl?: string;
+    name?: string;
+    description?: string;
+}
 
 abstract class ObjectBase {
     objectType: ObjectType;
@@ -92,6 +98,7 @@ abstract class ObjectBase {
     config: Array<NumberConfig | EnumConfig | StringConfig | BoolConfig | ColorConfig | RangeConfig>;
     configArray: Array<ConfigInputBase>;
     timeout: ReturnType<typeof setTimeout>;
+    metadata: ShaderMetaData; // TODO
 
     canvasFormat: GPUTextureFormat;
     context: GPUCanvasContext;
@@ -100,6 +107,17 @@ abstract class ObjectBase {
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
         this.canvasFormat = canvasFormat;
         this.device = device;
+    }
+
+    updateMetadata() {
+        let titleElm: any;
+        if(this.objectType = 'shader') {
+            titleElm = document.getElementById('shaderTitle');
+        }
+        else {
+            titleElm = document.getElementById('textureTitle');
+        }
+        titleElm.innerHTML = this.metadata.name;
     }
 
     /**
@@ -378,7 +396,21 @@ abstract class ObjectBase {
         return index;
     }
 
-    public abstract render(RenderDescriptor): void
+    boolBuffer(size: number, input: NumberConfig | EnumConfig | StringConfig | BoolConfig | ColorConfig | RangeConfig): GPUBuffer {
+        const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
+        const buffer = this.device.createBuffer({size, usage: usage});
+        this.device.queue.writeBuffer(buffer, 0, new Float32Array([Number(input.value)]));
+        return buffer;
+    }
+
+    numberBuffer(size: number, input: NumberConfig | EnumConfig | StringConfig | BoolConfig | ColorConfig | RangeConfig): GPUBuffer {
+        const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
+        const buffer = this.device.createBuffer({size, usage: usage});
+        this.device.queue.writeBuffer(buffer, 0, new Float32Array([<number>input.value]));
+        return buffer;
+    }
+
+    public abstract render(RenderDescriptor: RenderDescriptor): void
 
     // config events. TextureObject needs its own, even though the functions are indentical
     handleNumberConfig(target: HTMLInputElement, origin: ObjectBase, item: NumberConfig) {
@@ -390,6 +422,8 @@ abstract class ObjectBase {
         // if(origin.objectType == 'texture') {
         //     clearTimeout(origin.timeout);
         // }
+
+        console.log(item)
 
         origin.render({
             size: origin.size,

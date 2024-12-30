@@ -27,6 +27,7 @@ export abstract class TextureObject extends ObjectBase {
      */
     public setShader(shader: ShaderObject | null) {
         const shaderConfigs = document.getElementById('shaderOptions');
+        const shaderTitle = document.getElementById('shaderTitle');
 
         // if texture already has a shader: deactive it
         if(this.shader != undefined) {
@@ -37,6 +38,7 @@ export abstract class TextureObject extends ObjectBase {
         if(this.shader != undefined && shader != null && shader.constructor.name === this.shader.constructor.name) {
             shader = null;
             shaderConfigs.innerHTML = '';
+            shaderTitle.innerHTML = '';
         }
 
         this.shader = shader;

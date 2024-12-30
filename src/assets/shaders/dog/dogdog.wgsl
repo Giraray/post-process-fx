@@ -34,18 +34,13 @@ struct VertexShaderOutput {
 @group(0) @binding(0) var uSampler: sampler;
 @group(0) @binding(1) var uTexture: texture_2d<f32>;
 @group(0) @binding(2) var<uniform> uResolution: vec2<f32>;
-@group(0) @binding(3) var<uniform> uSigmaSubtract: f32;
-@group(0) @binding(4) var<uniform> uContrast: f32;
-@group(0) @binding(5) var<uniform> uBrightness: f32;
+@group(0) @binding(3) var<uniform> uTime: f32;
 
 const MATRIX_SIZE : i32 = 11;
 const KERNEL_SIZE : i32 = (MATRIX_SIZE - 1)/2;
 
-fn desaturate(color: vec3<f32>) -> vec4<f32> {
-    var lum = vec3(0.299, 0.587, 0.114);
-    var gray = vec3(dot(lum, color));
-    return vec4(vec3(gray), 1);
-}
+const PI : f32 = 3.141592653589793238;
+const radialDiv : f32 = 1.0/16.0;
 
 // normalized probability density function
 fn normPdf(x: f32, sigma: f32) -> f32 {
@@ -75,13 +70,13 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
             var texel = textureSample(uTexture, uSampler, (fragCoord + vec2(f32(i), f32(j))) / uResolution);
 
             // apply contrast + brightness
-            texel.r = mix(0.5, texel.r + uBrightness - 1.0, uContrast);
-            texel.g = mix(0.5, texel.g + uBrightness - 1.0, uContrast);
-            texel.b = mix(0.5, texel.b + uBrightness - 1.0, uContrast);
+            // texel.r = mix(0.5, texel.r + uBrightness - 1.0, uContrast);
+            // texel.g = mix(0.5, texel.g + uBrightness - 1.0, uContrast);
+            // texel.b = mix(0.5, texel.b + uBrightness - 1.0, uContrast);
 
-            texel.r = clamp(0.0, 1.0, texel.r);
-            texel.g = clamp(0.0, 1.0, texel.g);
-            texel.b = clamp(0.0, 1.0, texel.b);
+            // texel.r = clamp(0.0, 1.0, texel.r);
+            // texel.g = clamp(0.0, 1.0, texel.g);
+            // texel.b = clamp(0.0, 1.0, texel.b);
 
             blur += kernel[kSize + j] * kernel[kSize + i] * texel.rgb;
         }
@@ -93,29 +88,25 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
 @fragment fn fragMain(fsInput: VertexShaderOutput) -> @location(0) vec4f {
     var uv = fsInput.fragUV;
     var fragCoord = fsInput.fragCoord;
+    var sTensor = textureSample(uTexture, uSampler, uv);
 
-    //
-    // 2. DoG
-    var sigmaBase = 2.3;
-    var sigmaSubtract = sigmaBase + uSigmaSubtract;
+    var sigma = 0.000001;
 
-    var strongBlur = blur(fragCoord, sigmaSubtract);
-    var weakBlur = blur(fragCoord, sigmaBase);
+    var blur = blur(fragCoord, sigma);
 
-    // desaturate blurs
-    var desaturatedSBlur = desaturate(strongBlur);
-    var desaturatedWBlur = desaturate(weakBlur);
+    var eValues = vec2(0.0); // eigenvalues
+    eValues.x = (blur.x + blur.z + sqrt(pow(blur.x - blur.z, 2) + 4 * pow(blur.y, 2))) / 2.0;
+    eValues.y = (blur.x + blur.z - sqrt(pow(blur.x - blur.z, 2) + 4 * pow(blur.y, 2))) / 2.0;
 
-    // subtract the blurs
-    var DoG = desaturatedWBlur - desaturatedSBlur;
-    
-    // quantize
-    if(DoG.r < 0.017) {
-        DoG = vec4(0.0, 0.0, 0.0, 1.0);
-    }
-    else {
-        DoG = vec4(1.0,1.0,1.0,1.0);
-    }
+    // eigenvector
+    var eVector = vec2(eValues.x - blur.x, -blur.y);
+    // eVector = 1.0 - eVector;
+    eVector.r = 1.0 - eVector.r;
+    // eVector.g = abs(eVector.g) * 1.0;
 
-    return DoG;
+    var tex = textureSample(uTexture, uSampler, uv);
+
+    tex.r += 0.5;
+    return tex;
+    // return vec4(blur, 1.0);
 }
