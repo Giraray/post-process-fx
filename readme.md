@@ -1,6 +1,8 @@
 A silly website to showcase silly shaders
 
 todo (high priority stuff):
+- Cel shader palette customization
+- Cel shader theoretical color harmonies
 - changing img texture when previous image was original size will affect next preferredContainerSize, messing up resize functionality
 - Luminance calculations should probably be smoothed out (feels janky with ASCII blocks sometimes)
 - Improve the ASCII shader algorithm based on learnings from DoG filter implementation
@@ -11,7 +13,6 @@ todo (high priority stuff):
 - Learn SDF and raytracing to make extra cool 3D simulations as textures
 - Halftone/comic book shader :))))
 - gif/video support for ImgTexture?
-- configs dont update download data
 
 bugs and low priority stuff:
 - Insert image needs error handling.

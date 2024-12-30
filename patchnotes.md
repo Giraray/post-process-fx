@@ -1,3 +1,7 @@
+3 - 31.12.24
+- Split DoG filter into DoG Cel shader and DoG filter (the styles were too different)
+- Added random palette generation to Cel shader
+
 2 - 30.12.24
 - Added Difference of Gaussians filter (in progress)
 - Started implementing metadata for all shaders and textures (should get worked into its own system once its fleshed out)

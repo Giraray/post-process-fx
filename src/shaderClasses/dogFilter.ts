@@ -1,25 +1,46 @@
 import {ShaderObject, ProgramInstructions} from './shaderObject';
-import shaderCode from '../assets/shaders/dog/dogShader.wgsl?raw';
-import sobelCode from '../assets/shaders/dog/dogSobel.wgsl?raw';
-import dogCode from '../assets/shaders/dog/dogdog.wgsl?raw';
+import shaderCode from '../assets/shaders/dog/dogFilter.wgsl?raw';
 import {NumberConfig, EnumConfig, BoolConfig, RangeConfig, ColorConfig} from './objectBase';
 
 
-export default class DoGShader extends ShaderObject {
+export default class DoGFilter extends ShaderObject {
+    seedArray: Array<number>;
+
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
         super(device, canvasFormat)
         this.static = true;
+        this.seedArray = [Math.random(),Math.random(),Math.random(),Math.random()];
 
         this.configArray = this.createConfig();
         this.config = super.sortConfigs(this.configArray);
         this.initTextureConfig(this.config, this);
 
         this.metadata = {
-            name: 'In progress! (DoG filter)',
+            name: 'DoG Filter',
             imgUrl: '',
-            description: 'The difference of Gaussians (DoG) is an edge-enhancing band-pass filter. The DoG operator subtracts a blur of the image from another less blurred version, enhancing edges and filtering out noise. The result can then be easily stylized to achieve different aesthetics.',
+            description: 'Cel shading is the quantization of color values. This shader utilizes the Difference of Gaussians (DoG) operator to filter out noise and stylize the image before color quantization.',
         }
         this.updateMetadata();
+    }
+
+    // NumberConfig handler that also generates a palette seed. Used to isolate seed generation to adjustments to quantization
+    handleQuantizeConfig(target: HTMLInputElement, origin: DoGFilter, item: NumberConfig) {
+        for(let i = 0; i < 4; i++) {
+            origin.seedArray[i] = Math.random();
+        }
+
+        let value = parseFloat(target.value);
+        if(isNaN(value))
+            value = 0;
+        item.value = value;
+
+        console.log(origin.seedArray);
+
+        origin.render({
+            size: origin.size,
+            canvasFormat: origin.canvasFormat,
+            context: origin.context,
+        });
     }
 
     createConfig(): (NumberConfig | BoolConfig | EnumConfig)[] {
@@ -69,8 +90,8 @@ export default class DoGShader extends ShaderObject {
             id: 'thresh',
             title: '',
 
-            default: 4,
-            value: 4,
+            default: 3,
+            value: 3,
             step: 0.1,
 
             event: this.handleNumberConfig,
@@ -99,18 +120,7 @@ export default class DoGShader extends ShaderObject {
 
             event: this.handleNumberConfig,
         }
-        const quantize: NumberConfig = {
-            type: 'number',
-            label: 'Quantize',
-            id: 'quantize',
-            title: '',
-
-            default: 4,
-            value: 4,
-
-            event: this.handleNumberConfig,
-        }
-        return [blur, dog, tau, style, thresh, scaler, quantize];
+        return [blur, dog, tau, style, thresh, scaler];
     }
 
     createInstructions(time: number, width: number, height: number): ProgramInstructions {
@@ -121,25 +131,10 @@ export default class DoGShader extends ShaderObject {
         const thresh = this.findIndex('thresh');
         const scaler = this.findIndex('scaler');
         const tau = this.findIndex('tau');
-        const quantize = this.findIndex('quantize');
         const style = this.findIndex('style');
 
-        const sobelModule = device.createShaderModule({
-            code: sobelCode,
-        });
-        const sobelPipeline = device.createRenderPipeline({
-            layout: 'auto',
-            vertex: {
-                module: sobelModule,
-            },
-            fragment: {
-                module: sobelModule,
-                targets: [{format: this.canvasFormat}],
-            },
-        });
-
         const dogModule = device.createShaderModule({
-            code: dogCode,
+            code: shaderCode,
         });
         const dogPipeline = device.createRenderPipeline({
             layout: 'auto',
@@ -160,7 +155,6 @@ export default class DoGShader extends ShaderObject {
         const threshBuffer = this.numberBuffer(4, this.config[thresh]);
         const scalerBuffer = this.numberBuffer(4, this.config[scaler]);
         const tauBuffer = this.numberBuffer(4, this.config[tau]);
-        const quantizeBuffer = this.numberBuffer(4, this.config[quantize]);
 
         let styleEnum: number;
         switch(this.config[style].value) {
@@ -178,11 +172,9 @@ export default class DoGShader extends ShaderObject {
         const resBuffer = this.device.createBuffer({size:8, usage: usage});
         this.device.queue.writeBuffer(resBuffer, 0, new Float32Array([width, height]));
 
-        const sobelEntries = [
-            {binding: 0, resource: this.sampler},
-            {binding: 1, resource: this.texture.createView()},
-            {binding: 2, resource: { buffer: resBuffer }},
-        ]
+        // seedBuffer
+        const seedBuffer = this.device.createBuffer({size: 16, usage});
+        this.device.queue.writeBuffer(seedBuffer, 0, new Float32Array(this.seedArray));
 
         const dogEntries = [
             {binding: 0, resource: this.sampler},
@@ -193,25 +185,18 @@ export default class DoGShader extends ShaderObject {
             {binding: 5, resource: { buffer: threshBuffer }},
             {binding: 6, resource: { buffer: scalerBuffer }},
             {binding: 7, resource: { buffer: tauBuffer }},
-            {binding: 8, resource: { buffer: quantizeBuffer }},
-            {binding: 9, resource: { buffer: styleBuffer }},
+            {binding: 8, resource: { buffer: styleBuffer }},
         ]
 
         const instructions: ProgramInstructions = {
-            label: 'DoG shader instructions',
+            label: 'Cel shader instructions',
             passes: [
                 {
-                    label: 'sobel',
+                    label: 'Cel shader',
                     passType: 'render',
-                    pipeline: sobelPipeline,
+                    pipeline: dogPipeline,
                     entries: dogEntries,
                 },
-                // {
-                //     label: 'DoG',
-                //     passType: 'render',
-                //     pipeline: dogPipeline,
-                //     entries: dogEntries,
-                // },
             ],
         }
         return instructions;

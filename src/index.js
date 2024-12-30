@@ -12,7 +12,8 @@ import {ImgTexture} from './shaderClasses/img.ts';
 import CRTShader from './shaderClasses/crtShader.ts'
 import AsciiShader from './shaderClasses/asciiShader.ts'
 import TestShader from './shaderClasses/test.ts'
-import DoGFilter from './shaderClasses/dogShader.ts'
+import CelShader from './shaderClasses/celShader.ts'
+import DoGFilter from './shaderClasses/dogFilter.ts'
 
 if(!navigator.gpu) {
     alert('WebGPU is currently only supported in Chromium based browsers.')
@@ -20,7 +21,8 @@ if(!navigator.gpu) {
 }
 const adapter = await navigator.gpu.requestAdapter();
 if(!adapter) {
-    alert(`No appropriate GPUAdapter found. There are either no GPUs available for the browser, or the browser settings has graphics acceleration turned off.`)
+    alert(`No appropriate GPUAdapter found. 
+        WebGPU may be disabled in your browser feature settings, or it may not be supported. Graphics/hardware acceleration might also not be turned on in your browser settings.`)
     throw new Error('No appropriate GPUAdapter found');
 }
 
@@ -134,6 +136,7 @@ perlinSelect.addEventListener('click', function() {
 //
 const crtSelect = document.getElementById('crtShader');
 const asciiSelect = document.getElementById('asciiShader');
+const celSelect = document.getElementById('celShader');
 const dogSelect = document.getElementById('dogFilter');
 
 // crt shader
@@ -150,18 +153,25 @@ asciiSelect.addEventListener('click', function() {
     initShader(newShader);
 })
 
+// cel shader
+celSelect.addEventListener('click', function() {
+    const celShader = new CelShader(device, canvasFormat);
+    const newShader = celShader;
+    initShader(newShader);
+})
+
 // DoG filter
 dogSelect.addEventListener('click', function() {
-    const dogShader = new DoGFilter(device, canvasFormat);
-    const newShader = dogShader;
+    const dogSelect = new DoGFilter(device, canvasFormat);
+    const newShader = dogSelect;
     initShader(newShader);
 })
 
 initTexture(createImgTexture(source));
 
 // add default shaders for testing here vvvvvvv
-const dogShader = new DoGFilter(device, canvasFormat);
-initShader(dogShader);
+const celShader = new CelShader(device, canvasFormat);
+initShader(celShader);
 // remove
 
 // SAVE IMAGE
