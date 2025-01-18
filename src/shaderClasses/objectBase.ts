@@ -14,7 +14,8 @@ type ConfigType =
     | 'bool'
     | 'range'
     | 'string'
-    | 'color';
+    | 'color'
+    | 'btn';
 
 // number
 interface NumberConfig extends ConfigInputBase {
@@ -66,6 +67,11 @@ interface ColorConfig extends ConfigInputBase {
     value: string
 }
 
+// btn
+interface BtnConfig extends ConfigInputBase {
+
+}
+
 interface Size {
     width: number;
     height: number;
@@ -80,6 +86,7 @@ export interface RenderDescriptor {
     context?: GPUCanvasContext;
     finalRender?: boolean;
     renderTarget?: GPUTexture
+    fps?: number;
 }
 
 export type ObjectType = |
@@ -118,6 +125,7 @@ abstract class ObjectBase {
             titleElm = document.getElementById('textureTitle');
         }
         titleElm.innerHTML = this.metadata.name;
+        titleElm.title = this.metadata.description;
     }
 
     /**
@@ -157,6 +165,10 @@ abstract class ObjectBase {
 
             else if(item.type === 'color') {
                 this.createColorConfig(<ColorConfig>item, optionsDiv, origin);
+            }
+            
+            else if(item.type === 'btn') {
+                this.createBtnConfig(<BtnConfig>item, optionsDiv, origin)
             }
         }
     }
@@ -224,12 +236,39 @@ abstract class ObjectBase {
         if(item.default === true)
             input.setAttribute('checked', 'true');
 
-        if(item.title != undefined)
-            container.setAttribute('title', item.title);
+        container.setAttribute('title', item.title);
 
         // put elements together and add them to the DOM
         container.appendChild(span);
         const insertedInput = container.appendChild(input);
+        optionsDiv.appendChild(container);
+
+        // eventListener
+        insertedInput.addEventListener('click', (e) => {
+            item.event(e.target, origin, item);
+        });
+    }
+
+    createBtnConfig(item: BtnConfig, optionsDiv: HTMLDivElement, origin: ObjectBase) {
+        // config container
+        const container = document.createElement('div');
+        container.setAttribute('class', 'option-container_no-grid border444');
+
+        // config btn
+        const btn = document.createElement('div');
+        btn.classList.add('btn-config');
+        btn.id = item.id;
+        
+        // config label
+        const span = document.createElement('span');
+        span.classList.add('btn-config_span');
+        span.innerHTML = item.label;
+
+        container.setAttribute('title', item.title);
+
+        // put elements together and add them to the DOM
+        btn.appendChild(span);
+        const insertedInput = container.appendChild(btn);
         optionsDiv.appendChild(container);
 
         // eventListener
@@ -432,6 +471,7 @@ abstract class ObjectBase {
         });
     }
 
+    // these are literally all the same. Keeping just in case i make changes
     handleStringConfig(target: HTMLInputElement, origin: ObjectBase, item: StringConfig) {
         let value = target.value;
         item.value = value;
@@ -478,4 +518,4 @@ abstract class ObjectBase {
     }
 }
 
-export {ConfigInputBase, NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ColorConfig, ObjectBase}
+export {ConfigInputBase, NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ColorConfig, BtnConfig, ObjectBase}

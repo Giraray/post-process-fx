@@ -39,6 +39,7 @@ struct VertexShaderOutput {
 @group(0) @binding(5) var<uniform> uTau: f32;
 @group(0) @binding(6) var<uniform> uQuantize: f32;
 @group(0) @binding(7) var<uniform> uSeed: vec4<f32>;
+@group(0) @binding(8) var<uniform> uHarmony: f32; // 0 = analogous, 1 = equidistant, 2 = monochromatic, 3 = complementary
 
 const PI : f32 = 3.141592653589793238;
 const radialDiv : f32 = 1.0/16.0;
@@ -189,7 +190,7 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
     }
 
     var s = uSeed.w;
-    var rh = uSeed.z;
+    var rh = uSeed.z * 0.5;
     if(h + rh * (uQuantize - 1.0) > 1.0 + h) {
         rh *= 1.0 / (rh * uQuantize);
     }
@@ -209,6 +210,8 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
 
     baseColor.z += rl * mult;
     baseColor = hslToRgb(baseColor);
+
+    var harmony = uHarmony;
 
     // var col2 = vec3(1.0, 0.0, 0.0);
 

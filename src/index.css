@@ -108,6 +108,32 @@ canvas {
     margin: 0 0 10px 0;
 }
 
+.btn-config {
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    padding-block: 0;
+
+    border: #000 1px solid;
+    border-radius: 4px;
+    background-color: #eee;
+    padding: 0px 5px;
+}
+
+.btn-config_span {
+    color: #000;
+    border-radius: 4px;
+    font-size: 1rem;
+    user-select: none; /* not widely supported !!! */
+}
+
+.btn-config:hover {
+    border: #fff solid 1px;
+}
+
+.btn-config:active {
+    background-color: #aaa;
+    transform: scale(95%);
+}
+
 .options {
     height: 86%;
     overflow-y: auto;
@@ -117,6 +143,21 @@ canvas {
 .option-container {
     display: grid;
     grid-template-columns: 50% 50%;
+
+    min-height: 25px;
+    max-height: fit-content;
+
+    box-sizing: border-box;
+    padding: 5px;
+    margin-bottom: 5px;
+
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    color: #ddd;
+}
+
+.option-container_no-grid {
+    display: flex;
+    justify-content: center;
 
     min-height: 25px;
     max-height: fit-content;

@@ -1,6 +1,7 @@
 A silly website to showcase silly shaders
 
 todo (high priority stuff):
+- Cel shader edge
 - Cel shader palette customization
 - Cel shader theoretical color harmonies
 - changing img texture when previous image was original size will affect next preferredContainerSize, messing up resize functionality
@@ -19,6 +20,7 @@ bugs and low priority stuff:
 - Add onWindowResize handler.
 - re-evalute RenderDescriptor.
 - CRT filter sometimes has weird artefacts on ImgTextures. Have no idea why
+- config should not be initialized before a shader is applied. Currently it is created whenever a shader object is instantiatied
 
 things that would be nice to have:
 - Mouse-interactive fluid simulation texture

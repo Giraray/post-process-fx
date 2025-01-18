@@ -163,6 +163,9 @@ export abstract class ShaderObject extends ObjectBase {
             this.time -= delta/1000;
 
             requestAnimationFrame(this.render.bind(this, options));
-        }, 1000 / 30);
+            if(options.fps == undefined) {
+                options.fps = 30;
+            }
+        }, 1000 / options.fps);
     }
 }

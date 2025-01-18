@@ -157,8 +157,21 @@ export class PerlinTexture extends TextureObject {
 
             event: this.handleColorConfig,
         }
+        const fps: NumberConfig = {
+            type: 'number',
+            label: 'FPS',
+            id: 'fps',
+            title: "FPS of texture and shader - No effect if Animate is off",
 
-        return [intensity, gridSize, style, fractals, animate, speed, negColor, posColor];
+            default: 30,
+            value: 30,
+
+            disabled: true,
+
+            event: this.handleNumberConfig,
+        }
+
+        return [intensity, gridSize, style, fractals, animate, fps, speed, negColor, posColor];
     }
 
     setTimer() {
@@ -171,7 +184,7 @@ export class PerlinTexture extends TextureObject {
             this.time -= delta/1000;
 
             requestAnimationFrame(this.render.bind(this));
-        }, 1000 / 30);
+        }, 1000 / <number>this.config[this.findIndex('fps')].value);
     }
 
     // create texture
@@ -281,6 +294,7 @@ export class PerlinTexture extends TextureObject {
         const speed = this.findIndex('speed');
         const negColor = this.findIndex('negColor');
         const posColor = this.findIndex('posColor');
+        const fps = this.findIndex('fps');
         const config = this.config;
 
         // style options
@@ -303,6 +317,7 @@ export class PerlinTexture extends TextureObject {
 
         const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
 
+        // todo replace
         // style
         const styleBuffer = device.createBuffer({size: 4,usage: usage});
         device.queue.writeBuffer(styleBuffer, 0, new Int32Array([styleValue]));
@@ -452,6 +467,7 @@ export class PerlinTexture extends TextureObject {
                 },
                 canvasFormat: this.canvasFormat,
                 context: this.context,
+                fps: <number>this.config[this.findIndex('fps')].value,
             }
 
             shader.texture = textureOutput;
