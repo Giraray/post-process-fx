@@ -104,7 +104,11 @@ abstract class ObjectBase {
     size: Size;
     config: Array<NumberConfig | EnumConfig | StringConfig | BoolConfig | ColorConfig | RangeConfig>;
     configArray: Array<ConfigInputBase>;
+
     timeout: ReturnType<typeof setTimeout>;
+    time: number = 0;
+    lastUpdate: number;
+
     metadata: ShaderMetaData; // TODO
 
     canvasFormat: GPUTextureFormat;
@@ -461,8 +465,6 @@ abstract class ObjectBase {
         // if(origin.objectType == 'texture') {
         //     clearTimeout(origin.timeout);
         // }
-
-        console.log(item)
 
         origin.render({
             size: origin.size,

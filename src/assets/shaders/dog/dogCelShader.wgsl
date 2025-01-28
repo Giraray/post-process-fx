@@ -184,29 +184,28 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
 
     var h = uSeed.x;
     var l = uSeed.y;
+    var s = uSeed.w;
+
+    var rh = uSeed.z * 0.5;
+    var rl = uSeed.w;
 
     if(l > 0.7) { // todo: make it consistently dark
         l *= (l - 0.15);
     }
 
-    var s = uSeed.w;
-    var rh = uSeed.z * 0.5;
+    var baseColor = vec3(h,s,l);
+    var mult = clamp(dog.r, 0.0, 1.0) * (uQuantize - 1.0);
+
+    // adjust rHue and rLight to not make laps around ranges 0-1
     if(h + rh * (uQuantize - 1.0) > 1.0 + h) {
         rh *= 1.0 / (rh * uQuantize);
     }
 
-    var rl = uSeed.w;
     if(l + rl * (uQuantize - 1.0) > 1.0) {
         rl *= (1.0 - l) / (rl * uQuantize);
     }
 
-    var baseColor = vec3(h,s,l);
-    var mult = clamp(dog.r, 0.0, 1.0) * (uQuantize - 1.0);
-
     baseColor.x += rh * mult;
-    if(baseColor.x > 1.0) { // clamp hue into range if outside
-        baseColor.x = baseColor.x - 1.0;
-    }
 
     baseColor.z += rl * mult;
     baseColor = hslToRgb(baseColor);

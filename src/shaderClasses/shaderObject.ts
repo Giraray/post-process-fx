@@ -1,4 +1,5 @@
 import {ObjectBase, NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ColorConfig, ConfigInputBase, RenderDescriptor} from './objectBase';
+import { TextureObject } from './textureObject';
 
 interface Size {
     width: number,
@@ -35,7 +36,6 @@ export abstract class ShaderObject extends ObjectBase {
     bindGroup: GPUBindGroup;
     texture: GPUTexture;
 
-    timeout: number;
     time: number;
     lastUpdate: number;
 
@@ -43,6 +43,7 @@ export abstract class ShaderObject extends ObjectBase {
 
     static: boolean;
     readonly sampler: GPUSampler;
+    parentTexture: TextureObject;
 
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
         super(device, canvasFormat);
@@ -150,6 +151,11 @@ export abstract class ShaderObject extends ObjectBase {
                 computePass.dispatchWorkgroups(Math.ceil(w/shader.workgroupSize), Math.ceil(h/shader.workgroupSize), 1);
                 computePass.end();
             }
+        }
+
+        // lastly - if parent texture is not animated - update dataUrl for downloads
+        if(this.parentTexture.static == true) {
+            this.parentTexture.dataUrl = (<HTMLCanvasElement>this.context.canvas).toDataURL('image/png');
         }
     }
 

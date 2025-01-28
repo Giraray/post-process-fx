@@ -11,6 +11,10 @@ export abstract class TextureObject extends ObjectBase {
     dataUrl: string;
     preferredContainerSize: Size;
     container: HTMLDivElement;
+    static: boolean;
+
+    pipeline: GPURenderPipeline;
+    bindGroup: GPUBindGroup
 
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat, context: GPUCanvasContext) {
         super(device, canvasFormat);
@@ -44,5 +48,105 @@ export abstract class TextureObject extends ObjectBase {
         this.shader = shader;
     }
 
-    public abstract render(): void
+    abstract updateTexture(): void;
+
+    setTimer() {
+        clearInterval(this.timeout);
+        this.timeout = setInterval(() => {
+
+            const now = Date.now();
+            const delta = this.lastUpdate - now;
+            this.lastUpdate = now;
+            this.time -= delta/1000;
+
+            requestAnimationFrame(this.render.bind(this));
+        }, 1000 / <number>this.config[this.findIndex('fps')].value);
+    }
+
+    public render(): void {
+        this.updateTexture();
+
+        // create renderTarget if a shader is to be applied; otherwise use context
+        let textureOutput: GPUTexture;
+        if(this.shader) {
+
+            const renderTarget = this.device.createTexture({
+                label: 'texA placeholder',
+                format: this.canvasFormat,
+                size: [this.size.width, this.size.height],
+                usage: 
+                    GPUTextureUsage.TEXTURE_BINDING |
+                    GPUTextureUsage.RENDER_ATTACHMENT |
+                    GPUTextureUsage.COPY_SRC
+            });
+
+            textureOutput = renderTarget
+        }
+        else {
+            textureOutput = this.context.getCurrentTexture();
+        }
+
+        const textureEncoder = this.device.createCommandEncoder({
+            label: 'texEncoder',
+        });
+
+        // draw the pass
+        const pass = textureEncoder.beginRenderPass({
+            label: 'defaultImg pass',
+            colorAttachments: [<GPURenderPassColorAttachment>{
+                view: textureOutput.createView(),
+                clearValue: [0, 0, 0, 1],
+                loadOp: 'clear',
+                storeOp: 'store',
+            }],
+        });
+        pass.setPipeline(this.pipeline);
+        pass.setBindGroup(0, this.bindGroup);
+        pass.draw(6);
+        pass.end();
+
+        // submit pass
+        this.device.queue.submit([textureEncoder.finish()]);
+
+        // if texture is animatable then trigger render() on timer
+        if(this.config[this.findIndex('animate')] != undefined && this.config[this.findIndex('animate')].value === true) {
+            this.setTimer();
+            this.static = false;
+        }
+        else {
+            this.static = true;
+        }
+
+        // RENDER SHADER (if exists)
+        if(this.shader) {
+            const shader = this.shader;
+            const renderOptions = {
+                size: {
+                    width: this.size.width,
+                    height: this.size.height,
+                },
+                canvasFormat: this.canvasFormat,
+                context: this.context,
+                finalRender: true,
+            }
+
+            // pass the texture output from this texture to the shader
+            shader.texture = textureOutput;
+            
+            // register this textureObject as the shader's parentTexture once
+            if(shader.parentTexture == undefined) {
+                shader.parentTexture = this;
+            }
+
+            // whether or not the shader should be rendered mutliple times - based on if the shader is static or not
+            if(this.shader.static == true) {
+                shader.render(renderOptions);
+            }
+            else{
+                shader.renderOnTimer(renderOptions);
+            }
+        }
+
+        this.dataUrl = (<HTMLCanvasElement>this.context.canvas).toDataURL('image/png');
+    }
 }

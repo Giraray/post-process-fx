@@ -15,15 +15,13 @@ export class ImgTexture extends TextureObject {
     source: ImageBitmap;
     sizeMultiplier: Size;
 
-    bindGroup: GPUBindGroup;
-    pipeline: GPURenderPipeline;
-
     constructor(
         device: GPUDevice, canvasFormat: GPUTextureFormat, context: GPUCanvasContext, source: ImageBitmap
     ) {
         super(device, canvasFormat, context);
         this.sizeMultiplier = {width: 1,height: 1,};
         this.source = source;
+        this.static = true;
 
         this.configArray = this.createConfig();
         this.config = this.sortConfigs(this.configArray);
@@ -138,75 +136,6 @@ export class ImgTexture extends TextureObject {
 
         this.bindGroup = bindGroup;
         this.pipeline = pipeline;
-    }
-
-    public render() {
-        this.updateTexture();
-
-        // create renderTarget if a shader is to be applied; otherwise use context
-        let textureOutput: GPUTexture;
-        if(this.shader) {
-
-            const renderTarget = this.device.createTexture({
-                label: 'texA placeholder',
-                format: this.canvasFormat,
-                size: [this.size.width, this.size.height],
-                usage: 
-                    GPUTextureUsage.TEXTURE_BINDING |
-                    GPUTextureUsage.RENDER_ATTACHMENT |
-                    GPUTextureUsage.COPY_SRC
-            });
-
-            textureOutput = renderTarget
-        }
-        else {
-            textureOutput = this.context.getCurrentTexture();
-        }
-
-        const textureEncoder = this.device.createCommandEncoder({
-            label: 'texEncoder',
-        });
-
-        const pass = textureEncoder.beginRenderPass({
-            label: 'defaultImg pass',
-            colorAttachments: [<GPURenderPassColorAttachment>{
-                view: textureOutput.createView(),
-                clearValue: [0, 0, 0, 1],
-                loadOp: 'clear',
-                storeOp: 'store',
-            }],
-        });
-        pass.setPipeline(this.pipeline);
-        pass.setBindGroup(0, this.bindGroup);
-        pass.draw(6);
-        pass.end();
-
-        this.device.queue.submit([textureEncoder.finish()]);
-
-        // RENDER SHADER (if exists)
-        if(this.shader) {
-            const shader = this.shader;
-            const renderOptions = {
-                size: {
-                    width: this.size.width,
-                    height: this.size.height,
-                },
-                canvasFormat: this.canvasFormat,
-                context: this.context,
-                finalRender: true,
-            }
-
-            shader.texture = textureOutput;
-
-            if(this.shader.static == true) {
-                shader.render(renderOptions);
-            }
-            else{
-                shader.renderOnTimer(renderOptions);
-            }
-        }
-
-        this.dataUrl = (<HTMLCanvasElement>this.context.canvas).toDataURL('image/png');
     }
 
     public resizeCanvas() {
