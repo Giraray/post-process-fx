@@ -210,6 +210,7 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
     baseColor.z += rl * mult;
     baseColor = hslToRgb(baseColor);
 
+    // 0 = analogous, 1 = equidistant, 2 = monochromatic, 3 = complementary
     var harmony = uHarmony;
 
     // var col2 = vec3(1.0, 0.0, 0.0);

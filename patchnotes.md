@@ -1,3 +1,6 @@
+5 - 29.01.25
+- Adjusting cel shader color quantization no longer generates a new palette. Palettes are only generated with the button config
+
 4 - 28.01.25
 - Fixed dataUrl not updating when shader is adjusted, which previously resulted in the canvas data not updating until the texture is changed and prevent updated image downloads
 - Abstracted render() for TextureObjects, massively reducing boilerplate code in existing and future texture objects.

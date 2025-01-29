@@ -26,13 +26,21 @@ export default class CelShader extends ShaderObject {
         this.updateMetadata();
     }
 
-    // NumberConfig handler that also generates a palette seed. Used to isolate seed generation to adjustments to quantization
-    handleQuantizeConfig(target: HTMLInputElement, origin: CelShader, item: NumberConfig) {
+    handleGeneratePalette(target: HTMLInputElement, origin: CelShader) {
         for(let i = 0; i < 4; i++) {
             origin.seedArray[i] = Math.random();
         }
         origin.satSeed = Math.random();
 
+        origin.render({
+            size: origin.size,
+            canvasFormat: origin.canvasFormat,
+            context: origin.context,
+        });
+    }
+
+    // NumberConfig handler that also generates a palette seed. Used to isolate seed generation to adjustments to quantization
+    handleQuantizeConfig(target: HTMLInputElement, origin: CelShader, item: NumberConfig) {
         let value = parseFloat(target.value);
         if(isNaN(value))
             value = 0;
@@ -155,7 +163,7 @@ export default class CelShader extends ShaderObject {
             label: 'Generate palette',
             id: 'genPalette',
             title: '',
-            event: this.handleQuantizeConfig
+            event: this.handleGeneratePalette
         }
         return [blur, dog, tau, quantize, aa, aaStrength, harmony, genPalette];
     }
