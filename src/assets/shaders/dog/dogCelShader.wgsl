@@ -39,7 +39,8 @@ struct VertexShaderOutput {
 @group(0) @binding(5) var<uniform> uTau: f32;
 @group(0) @binding(6) var<uniform> uQuantize: f32;
 @group(0) @binding(7) var<uniform> uSeed: vec4<f32>;
-@group(0) @binding(8) var<uniform> uHarmony: f32; // 0 = analogous, 1 = equidistant, 2 = monochromatic, 3 = complementary
+@group(0) @binding(8) var<uniform> uColorSpace: f32;
+@group(0) @binding(9) var<uniform> uHarmony: f32; // 0 = analogous, 1 = equidistant, 2 = monochromatic, 3 = complementary
 
 const PI : f32 = 3.141592653589793238;
 const radialDiv : f32 = 1.0/16.0;
@@ -56,6 +57,8 @@ const verticalSobelMatrix = array<f32, 9>(
     0.0, 0.0, 0.0,
     -kernel1, -kernel2, -kernel1
 );
+
+const xyzRef = vec3(95.047, 100.0, 108.0);
 
 const MATRIX_SIZE : i32 = 11;
 const KERNEL_SIZE : i32 = (MATRIX_SIZE - 1)/2;
@@ -113,11 +116,54 @@ fn hslToRgb(hsl: vec3<f32>) -> vec3<f32> {
     return rgb;
 }
 
-fn asd(colA: vec3<f32>, colB: vec3<f32>, h: f32) -> vec3<f32> {
-    var lmsA = pow(kCONEtoLMS * colA, vec3(1.0/3.0));
-    var lmsB = pow(kCONEtoLMS * colB, vec3(1.0/3.0));
-    var lms = mix(lmsA, lmsB, h);
-    return kLMStoCONE * (lms*lms*lms);
+fn lchToLab(lch: vec3<f32>) -> vec3<f32> {
+    // H range = 0 -> 360
+    var lab = vec3<f32>();
+    lab.x = lch.x;
+    lab.y = cos(radians(lch.z)) * lch.y;
+    lab.z = sin(radians(lch.z)) * lch.y;
+    return lab;
+}
+
+fn labToXyz(lab: vec3<f32>) -> vec3<f32> {
+    var xyz = vec3<f32>();
+    var y = (lab.x + 16.0) / 116.0;
+    var x = lab.y / 500.0 + y;
+    var z = y - lab.z / 200.0;
+
+    if(pow(y, 3) > 0.008856) {y = pow(y, 3);}
+    else {y = (y - 16.0 / 116.0) / 7.787;}
+
+    if(pow(x, 3) > 0.008856) {x = pow(x, 3);}
+    else {x = (x - 16.0 / 116.0) / 7.787;}
+
+    if(pow(z, 3) > 0.008856) {z = pow(z, 3);}
+    else {z = (z - 16.0 / 116.0) / 7.787;}
+
+    xyz = vec3(x*xyzRef.x, y*xyzRef.y, z*xyzRef.z);
+    return xyz;
+}
+
+fn xyzToRgb(xyz: vec3<f32>) -> vec3<f32> {
+    // x, y, z input refer to a D65/2° standard illuminant
+
+    var c = vec3(xyz) / 100.0;
+
+    var rgb = vec3<f32>();
+    rgb.x = c.x *  3.2406 + c.y * -1.5372 + c.z * -0.4986;
+    rgb.y = c.x * -0.9689 + c.y *  1.8758 + c.z *  0.0415;
+    rgb.z = c.x *  0.0557 + c.y * -0.2040 + c.z *  1.0570;
+
+    if(rgb.x > 0.0031308) {rgb.x = 1.055 * (pow(rgb.x, 1.0 / 2.4)) - 0.055;}
+    else {rgb.x *= 12.92;}
+
+    if(rgb.y > 0.0031308) {rgb.y = 1.055 * (pow(rgb.y, 1.0 / 2.4)) - 0.055;}
+    else {rgb.y *= 12.92;}
+
+    if(rgb.z > 0.0031308) {rgb.z = 1.055 * (pow(rgb.z, 1.0 / 2.4)) - 0.055;}
+    else {rgb.z *= 12.92;}
+
+    return rgb;
 }
 
 fn desaturate(color: vec3<f32>) -> vec3<f32> {
@@ -186,7 +232,7 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
     var l = uSeed.y;
     var s = uSeed.w;
 
-    var rh = uSeed.z * 0.5;
+    var rh = uSeed.z;
     var rl = uSeed.w;
 
     if(l > 0.7) { // todo: make it consistently dark
@@ -209,24 +255,22 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
 
     baseColor.z += rl * mult;
     baseColor = hslToRgb(baseColor);
+    var col = baseColor;
 
     // 0 = analogous, 1 = equidistant, 2 = monochromatic, 3 = complementary
     var harmony = uHarmony;
 
-    // var col2 = vec3(1.0, 0.0, 0.0);
+    // todo: tweak values
+    if(uColorSpace == 0.0) {
+        var multVec = vec3(100.0, 100.0, 360.0);
+        var lch = vec3(l,s,h);
+        lch.x += rl * mult;
+        lch.z += rh * 0.6 * mult;
+        var lchC = vec3(lch) * multVec;
+        col = lchToLab(lchC);
+        col = labToXyz(col);
+        col = xyzToRgb(col);
+    }
 
-    // col1 = pow(col1, vec3(2.2));
-    // col2 = pow(col2, vec3(2.2));
-
-    // var mixCol = vec3(0.0);
-    // if(uv.x < 0.49) {
-    //     mixCol = mix(col1, col2, uv.y);
-    // }
-    // else if(uv.x > 0.51) {
-    //     mixCol = asd(col1, col2, uv.y);
-    // }
-
-    // mixCol = pow(mixCol, vec3(1.0/2.2));
-
-    return vec4(baseColor, 1.0);
+    return vec4(col, 1.0);
 }

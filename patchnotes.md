@@ -1,3 +1,6 @@
+6 - 23.02.25
+- Added LCh color space to the Cel shader as a config which addresses non-perceptually uniform color palette gradients - an artefact from using HSL. In fact, I might just remove the HSL option entirely since it sometimes looks like utter ass.
+
 5 - 29.01.25
 - Adjusting cel shader color quantization no longer generates a new palette. Palettes are only generated with the button config
 

@@ -1,7 +1,6 @@
 A silly website to showcase silly shaders
 
 todo (high priority stuff):
-- Cel shader edge
 - Cel shader palette customization
 - Cel shader theoretical color harmonies
 - changing img texture when previous image was original size will affect next preferredContainerSize, messing up resize functionality
