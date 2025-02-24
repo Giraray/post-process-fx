@@ -126,7 +126,6 @@ fn lchToLab(lch: vec3<f32>) -> vec3<f32> {
 }
 
 fn labToXyz(lab: vec3<f32>) -> vec3<f32> {
-    var xyz = vec3<f32>();
     var y = (lab.x + 16.0) / 116.0;
     var x = lab.y / 500.0 + y;
     var z = y - lab.z / 200.0;
@@ -139,8 +138,7 @@ fn labToXyz(lab: vec3<f32>) -> vec3<f32> {
 
     if(pow(z, 3) > 0.008856) {z = pow(z, 3);}
     else {z = (z - 16.0 / 116.0) / 7.787;}
-
-    xyz = vec3(x*xyzRef.x, y*xyzRef.y, z*xyzRef.z);
+    var xyz = xyzRef * vec3(x,y,z);
     return xyz;
 }
 
