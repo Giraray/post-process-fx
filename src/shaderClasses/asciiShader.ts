@@ -6,7 +6,7 @@ import {ShaderObject, ProgramInstructions, ShaderProgram} from './shaderObject';
 
 import {NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ColorConfig, ConfigInputBase} from './objectBase';
 
-import {Bitmap, testBitmap, bitmapEdgeVer1_Data, bitmapVer4_Data, bitmapVer5_Data } from '../assets/bitmaps/bitmaps';
+import {Bitmap, testBitmap, bitmapEdgeVer1_Data, bitmapVer4_Data, bitmapVer5_Data, hinrikBitmap } from '../assets/bitmaps/bitmaps';
 
 export default class AsciiShader extends ShaderObject {
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
@@ -216,7 +216,8 @@ export default class AsciiShader extends ShaderObject {
         this.device.queue.writeBuffer(brightnessBuffer, 0, new Float32Array([<number>this.config[brightness].value]));
 
         // bitmaps
-        const bitmap = this.createBitmap(bitmapVer5_Data);
+        // const bitmap = this.createBitmap(bitmapVer5_Data);
+        const bitmap = this.createBitmap(hinrikBitmap);
         const bitmapEdge = this.createBitmap(bitmapEdgeVer1_Data);
 
         // DoG

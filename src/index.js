@@ -126,7 +126,8 @@ defaultImgSelect.addEventListener('click', function() {
 
 // perlin texture
 perlinSelect.addEventListener('click', function() {
-    const newTexture = new PerlinTexture(device, canvasFormat, context, divSize);
+    const customSize = {width: 800, height: 800*Math.sqrt(2)}
+    const newTexture = new PerlinTexture(device, canvasFormat, context, customSize);
     initTexture(newTexture);
 });
 

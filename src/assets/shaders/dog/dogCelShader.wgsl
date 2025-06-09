@@ -39,8 +39,7 @@ struct VertexShaderOutput {
 @group(0) @binding(5) var<uniform> uTau: f32;
 @group(0) @binding(6) var<uniform> uQuantize: f32;
 @group(0) @binding(7) var<uniform> uSeed: vec4<f32>;
-@group(0) @binding(8) var<uniform> uColorSpace: f32;
-@group(0) @binding(9) var<uniform> uHarmony: f32; // 0 = analogous, 1 = equidistant, 2 = monochromatic, 3 = complementary
+@group(0) @binding(8) var<uniform> uHarmony: f32; // 0 = analogous, 1 = equidistant, 2 = monochromatic, 3 = complementary
 
 const PI : f32 = 3.141592653589793238;
 const radialDiv : f32 = 1.0/16.0;
@@ -233,6 +232,12 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
     var rh = uSeed.z;
     var rl = uSeed.w;
 
+    // 0 = analogous, 1 = equidistant, 2 = monochromatic, 3 = complementary
+    var harmony = uHarmony;
+    if(harmony == 1.0) {
+        rh = 0.0;
+    }
+
     if(l > 0.7) { // todo: make it consistently dark
         l *= (l - 0.15);
     }
@@ -255,20 +260,15 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
     baseColor = hslToRgb(baseColor);
     var col = baseColor;
 
-    // 0 = analogous, 1 = equidistant, 2 = monochromatic, 3 = complementary
-    var harmony = uHarmony;
-
     // todo: tweak values
-    if(uColorSpace == 0.0) {
-        var multVec = vec3(100.0, 100.0, 360.0);
-        var lch = vec3(l,s,h);
-        lch.x += rl * mult;
-        lch.z += rh * 0.6 * mult;
-        var lchC = vec3(lch) * multVec;
-        col = lchToLab(lchC);
-        col = labToXyz(col);
-        col = xyzToRgb(col);
-    }
+    var multVec = vec3(100.0, 100.0, 360.0);
+    var lch = vec3(l,s,h);
+    lch.x += rl * mult;
+    lch.z += rh * 0.6 * mult;
+    var lchC = vec3(lch) * multVec;
+    col = lchToLab(lchC);
+    col = labToXyz(col);
+    col = xyzToRgb(col);
 
     return vec4(col, 1.0);
 }

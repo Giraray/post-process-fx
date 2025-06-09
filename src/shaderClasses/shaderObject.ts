@@ -90,12 +90,11 @@ export abstract class ShaderObject extends ObjectBase {
                 });
             }
 
-            if(i-1 > 0 && instructions.passes[i-2].passType == 'compute') {
-                // if this pass follows a compute pass, then dont create another commandEncoder.
-                // do nothing
+            if(i-1 == 0 || instructions.passes[i-2].passType != 'compute') {
+                pass = this.device.createCommandEncoder();
             }
             else {
-                pass = this.device.createCommandEncoder();
+                // pass = this.device.createCommandEncoder();
             }
 
             if(shader.passType === 'render') {

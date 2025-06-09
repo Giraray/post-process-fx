@@ -64,10 +64,6 @@ export default class CelShader extends ShaderObject {
         });
     }
 
-    handleGenPaletteBtn(origin: CelShader) {
-
-    }
-
     createConfig(): (NumberConfig | BoolConfig | EnumConfig | BtnConfig)[] {
         const blur: NumberConfig = {
             type: 'number',
@@ -122,8 +118,8 @@ export default class CelShader extends ShaderObject {
             id: 'aa',
             title: 'Applies a box blur to smooth aliased edges',
 
-            default: true,
-            value: true,
+            default: false,
+            value: false,
 
             event: this.handleFXAAConfig,
         }
@@ -140,22 +136,6 @@ export default class CelShader extends ShaderObject {
 
             event: this.handleNumberConfig,
         }
-        const colorSpace: EnumConfig = {
-            type: 'enum',
-            label: 'Color space',
-            id: 'colorSpace',
-            title: '',
-
-            options: [
-                {id: 'lch', label: 'LCh'},
-                {id: 'hsl', label: 'HSL'},
-            ],
-
-            default: 'lch',
-            value: 'lch',
-
-            event: this.handleEnumConfig,
-        }
         const harmony: EnumConfig = {
             type: 'enum',
             label: 'Harmony',
@@ -164,9 +144,7 @@ export default class CelShader extends ShaderObject {
 
             options: [
                 {id: 'analogous', label: 'Analogous'},
-                {id: 'equidistant', label: 'Equidistant'},
                 {id: 'monochromatic', label: 'Monochromatic'},
-                {id: 'complementary', label: 'Complementary'},
             ],
 
             default: 'analogous',
@@ -181,7 +159,7 @@ export default class CelShader extends ShaderObject {
             title: '',
             event: this.handleGeneratePalette
         }
-        return [blur, dog, tau, quantize, aa, aaStrength, colorSpace, harmony, genPalette];
+        return [blur, dog, tau, quantize, aa, aaStrength, harmony, genPalette];
     }
 
     createInstructions(time: number, width: number, height: number): ProgramInstructions {
@@ -245,39 +223,17 @@ export default class CelShader extends ShaderObject {
         const seedBuffer = this.device.createBuffer({size: 16, usage});
         this.device.queue.writeBuffer(seedBuffer, 0, new Float32Array(this.seedArray));
 
-        let colorSpace: number;
-        switch(this.config[this.findIndex('colorSpace')].value) {
-            case 'lch':
-                colorSpace = 0;
-                break;
-            case 'hsl':
-                colorSpace = 1;
-                break;
-            default:
-                colorSpace = 0;
-                console.log('Error selecting color space: Setting to default (LCh)')
-                break;
-        }
-        const colorSpaceBuffer = this.device.createBuffer({size: 4, usage});
-        this.device.queue.writeBuffer(colorSpaceBuffer, 0, new Float32Array([colorSpace]));
-
         let harmonyEnum: number;
         switch(this.config[this.findIndex('harmony')].value) {
             case 'analogous':
                 harmonyEnum = 0;
                 break;
-            case 'equidistant':
-                harmonyEnum = 1;
-                break;
             case 'monochromatic':
-                harmonyEnum = 2;
-                break;
-            case 'complementary':
-                harmonyEnum = 3;
+                harmonyEnum = 1;
                 break;
             default:
                 harmonyEnum = 0;
-                console.log('Error selecting harmony: Setting to default (analogous)')
+                console.log('Error selecting harmony. Setting to default (analogous)')
                 break;
         }
         const harmonyBuffer = this.device.createBuffer({size: 4, usage});
@@ -292,8 +248,7 @@ export default class CelShader extends ShaderObject {
             {binding: 5, resource: { buffer: tauBuffer }},
             {binding: 6, resource: { buffer: quantizeBuffer }},
             {binding: 7, resource: { buffer: seedBuffer }},
-            {binding: 8, resource: { buffer: colorSpaceBuffer }},
-            {binding: 9, resource: { buffer: harmonyBuffer }},
+            {binding: 8, resource: { buffer: harmonyBuffer }},
         ];
 
         const cannyEntries = [
