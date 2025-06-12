@@ -1,6 +1,6 @@
 ### A silly website to showcase silly shaders
 
->[!NOTE]
+>[!TIP]
 >After installing dependencies, run `npx vite` to serve locally
 
 This project provides a variety of base image textures and effects in your graphics accelerated browser. It utilizes the W3C [WebGPU](https://github.com/gpuweb/gpuweb) API to run shaders on the web. The project is still under development and is mostly exploratory in nature, serving as my conduit for learning the computer graphics paradigm.
