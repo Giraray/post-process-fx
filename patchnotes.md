@@ -1,3 +1,6 @@
+7 - 13.06.25
+- Added a try-catch for the GPU adapter. Changed the readme and moved Todo's to own txt file. Expanded upon bitmaps.
+
 6 - 23.02.25
 - Added LCh color space to the Cel shader as a config which addresses non-perceptually uniform color palette gradients - an artefact from using HSL. In fact, I might just remove the HSL option entirely since it sometimes looks like utter ass.
 

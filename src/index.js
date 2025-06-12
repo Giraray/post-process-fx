@@ -19,12 +19,26 @@ if(!navigator.gpu) {
     alert('WebGPU is currently only supported in Chromium based browsers.')
     throw new Error('WebGPU not supported on this browser');
 }
-const adapter = await navigator.gpu.requestAdapter();
-if(!adapter) {
-    alert(`No appropriate GPUAdapter found. 
-        WebGPU may be disabled in your browser feature settings, or it may not be supported. Graphics/hardware acceleration might also not be turned on in your browser settings.`)
-    throw new Error('No appropriate GPUAdapter found');
+async function getAdapter() {
+    try {
+        return await navigator.gpu.requestAdapter();
+    }
+    catch(e) {
+        alert(e)
+        throw new Error(e)
+    }
 }
+const adapter = await getAdapter();
+
+//// vvv  old getAdapter() - just in case the above code breaks at some point
+// const adapter = await navigator.gpu.requestAdapter();
+// if(!adapter) {
+//     alert(`No appropriate GPUAdapter found. 
+//         WebGPU may be disabled in your browser feature settings, or it may not be supported. Graphics/hardware acceleration might also not be turned on in your browser settings.\n
+//         May require enabling chrome://flags/#enable-unsafe-webgpu
+//         `)
+//     throw new Error('No appropriate GPUAdapter found');
+// }
 
 const device = await adapter.requestDevice();
 const canvas = document.querySelector('canvas');
@@ -203,7 +217,7 @@ function processInput() {
             const newTexture = createImgTexture(source);
             initTexture(newTexture);
         }
-        catch(error) { // todo: figure out wtf is going on here
+        catch(error) { // todo: figure out wtf these errors are
             alert('File cannot be over 10 MB.. for some reason. \n\n Uploaded file was ' + Math.round(file.size/10000)/100 + ' MB');
             console.error('Error: ' + error.message);
         }
