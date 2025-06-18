@@ -9,6 +9,7 @@
 @group(0) @binding(8) var<uniform> uBgCol: vec3<f32>;
 @group(0) @binding(9) var<uniform> uContrast: f32;
 @group(0) @binding(10) var<uniform> uBrightness: f32;
+@group(0) @binding(11) var<uniform> uBitmapSize: f32;
 
 struct VertexOutput {
     @builtin(position) Position : vec4<f32>,
@@ -65,11 +66,11 @@ fn compressUV(scale: f32, fragCoord: vec2<f32>) -> vec2<f32> {
 
 fn getQuantizedLuma(frag: vec4<f32>) -> f32 {
     var fragLuma = frag.r * 0.2126 + frag.g * 0.7152 + frag.b * 0.0722;
-    return floor(fragLuma * QUANTIZATION)/QUANTIZATION;
+    return floor(fragLuma * uBitmapSize)/uBitmapSize;
 }
 
 fn getBitmapOffset(luma: f32) -> f32 {
-    return luma * QUANTIZATION * 8.0;
+    return luma * uBitmapSize * 8.0;
 }
 
 fn getEdgeOffset(color: vec3<f32>) -> f32 {
@@ -126,7 +127,7 @@ fn frag_main(
     var bitmapCoord = fragCoord % 8.0;
     bitmapCoord.x += getBitmapOffset(luma);
 
-    var bitmapUV = bitmapCoord / vec2(80,8);
+    var bitmapUV = bitmapCoord / vec2(8*(uBitmapSize + 1),8);
     var ascii = textureSample(uBitmap, uSampler, bitmapUV);
 
     var edges = textureSample(colorBuffer, uSampler, uv);

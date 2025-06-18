@@ -104,7 +104,7 @@ function sortByBrightness(arr: string[]): string[] {
         for(let i = 0; i < arr.length - 1; i++) {
             if(getCharBrightness(arr[i]) > getCharBrightness(arr[i + 1])) {
                 const nextChar = arr[i+1];
-                console.log('swapped: ' + (arr[i]) + ' with ' + (arr[i+1]))
+                // console.log('swapped: ' + (arr[i]) + ' with ' + (arr[i+1]))
                 arr[i+1] = arr[i];
                 arr[i] = nextChar;
             }
@@ -464,6 +464,28 @@ const cR = `
 -0----0-
 `
 
+const cQuestion = `
+--------
+---00---
+--0--00-
+----000-
+---0----
+--------
+---0----
+--------
+`
+
+const cAt = `
+--------
+--0000--
+-0----0-
+-0-0000-
+-0--00--
+--0-----
+---00---
+--------
+`
+
 const cBlock = `
 0000000-
 0000000-
@@ -480,7 +502,112 @@ export const testBitmap: Bitmap = {
     data: dataToArray(assembleChars([cBackspace, cDot, cColon, cPlus, cc, cg, cC, cH, cB, cBlock]), 8*8*10*4)
 }
 
+/**
+ * Used to dynamically retrieve a character for bitmap assembly
+ */
+export class BitmapAssembler {
+    private cBackspace = cBackspace;
+    private cDot = cDot;
+    // private cComma = cComma;
+    private cMinus = cMinus;
+    private cPlus = cPlus;
+    private cColon = cColon;
+    private cSemicolon = cSemicolon;
+    private cBlock = cBlock;
+    private cAt = cAt;
+    private cQuestion = cQuestion;
+
+    private ca = ca;
+    private cA = cA;
+    private cb = cb;
+    private cB = cB;
+    private cc = cc;
+    private cC = cC;
+    private cd = cd;
+    private cD = cD;
+    private ce = ce;
+    private cE = cE;
+    private cf = cf;
+    private cF = cF;
+    private cg = cg;
+    // private cG = cG;
+    private ch = ch;
+    private cH = cH;
+    private ci = ci;
+    private cI = cI;
+    // private cj = cj;
+    // private cJ = cJ;
+    private ck = ck;
+    private cK = cK;
+    private cn = cn;
+    private cN = cN;
+    private cr = cr;
+    private cR = cR;
+
+    // return character bitmap string
+    public getChar(suffix: string): string {
+
+        // sanitize special characters
+        switch(suffix) {
+            case " ":
+                suffix = "Backspace";
+                break;
+            case ".":
+                suffix = "Dot";
+                break;
+            case ",":
+                suffix = "Comma";
+                break;
+            case ":":
+                suffix = "Colon";
+                break;
+            case ";":
+                suffix = "Semicolon";
+                break;
+            case "+":
+                suffix = "Plus";
+                break;
+            case "-":
+                suffix = "Minus";
+                break;
+            case "*":
+                suffix = "Block";
+                break;
+            case "@":
+                suffix = "At";
+                break;
+            case "?":
+                suffix = "Question";
+                break;
+
+        }
+        const char = this["c" + suffix];
+        return char;
+    }
+
+    public createBitmap(string: string): Bitmap {
+        const chars = [];
+
+        // add bitmap characters corresponding to input to chars[]
+        for(let i = 0; i < string.length; i++) {
+            const currCharFromString = string[i];
+            chars.push(this.getChar(currCharFromString));
+        }
+
+        const width = 8*string.length;
+        
+        // creates a bitmap with a dynamic width
+        const bitmap: Bitmap = {
+            size: {width, height: 8},
+            data: dataToArray(assembleChars(chars), 8*8*width*4),
+        };
+        return bitmap;
+    }
+}
+
 export const hinrikBitmap: Bitmap = {
     size: {width: 80, height: 8},
     data: dataToArray(assembleChars([cBackspace, cDot, ci, cr, cn, ch, ck, cH, cN, cK]), 8*8*10*4)
 }
+
+new BitmapAssembler().createBitmap("ab")

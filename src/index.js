@@ -40,7 +40,17 @@ const adapter = await getAdapter();
 //     throw new Error('No appropriate GPUAdapter found');
 // }
 
-const device = await adapter.requestDevice();
+async function getDevice() {
+    try {
+        return await adapter.requestDevice();
+    }
+    catch(e) {
+        alert(e + "\n\nIf you are on linux, try enabling Vulkan support for your browser in the browser flags.");
+        throw new Error(e);
+    }
+}
+const device = await getDevice();
+
 const canvas = document.querySelector('canvas');
 const context = canvas.getContext('webgpu');
 
@@ -186,7 +196,8 @@ initTexture(createImgTexture(source));
 
 // add default shaders for testing here vvvvvvv
 const celShader = new CelShader(device, canvasFormat);
-initShader(celShader);
+const asciiShader = new AsciiShader(device, canvasFormat);
+initShader(asciiShader);
 // remove
 
 // SAVE IMAGE

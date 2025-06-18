@@ -6,11 +6,15 @@ import {ShaderObject, ProgramInstructions, ShaderProgram} from './shaderObject';
 
 import {NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ColorConfig, ConfigInputBase} from './objectBase';
 
-import {Bitmap, testBitmap, bitmapEdgeVer1_Data, bitmapVer4_Data, bitmapVer5_Data, hinrikBitmap } from '../assets/bitmaps/bitmaps';
+import {Bitmap, testBitmap, bitmapEdgeVer1_Data, bitmapVer4_Data, bitmapVer5_Data, hinrikBitmap, BitmapAssembler } from '../assets/bitmaps/bitmaps';
 
 export default class AsciiShader extends ShaderObject {
+    bitmapAssembler: BitmapAssembler;
+
     constructor(device: GPUDevice, canvasFormat: GPUTextureFormat) {
         super(device, canvasFormat);
+
+        this.bitmapAssembler = new BitmapAssembler();
         this.code = asciiDogCode;
         this.static = true;
         this.shaderModule = device.createShaderModule({
@@ -38,6 +42,17 @@ export default class AsciiShader extends ShaderObject {
         this.updateMetadata();
     }
 
+    handleBitmapConfig(target: HTMLInputElement, origin: AsciiShader, item: StringConfig) {
+        let value = target.value;
+        item.value = value;
+
+        origin.render({
+            size: origin.size,
+            canvasFormat: origin.canvasFormat,
+            context: origin.context,
+        });
+    }
+
     createConfig(): (NumberConfig | BoolConfig | ColorConfig | StringConfig)[] {
         const drawEdges: BoolConfig = {
             type: 'bool',
@@ -57,8 +72,8 @@ export default class AsciiShader extends ShaderObject {
             id: 'edgeThreshold',
             title: 'Edge strength theshold - No effect if "Draw edges" is false',
             
-            default: 10,
-            value: 10,
+            default: 20,
+            value: 20,
             min: 0,
             max: 64,
 
@@ -67,15 +82,12 @@ export default class AsciiShader extends ShaderObject {
 
         const bitmapSet: StringConfig = { // todo indepth user explanation
             type: 'string',
-            label: 'Bitmap set',
+            label: 'Characters',
             id: 'bitmapSet',
-            // title: 'ASCII bitmap set',
-            title: "In progress!",
+            title: "Characters to render",
             
-            default: '',
-            value: '',
-
-            disabled: true,
+            default: ' .-+:;aAbBcCdDeEfFghHikKnNrR*?@',
+            value: ' .-+:;aAbBcCdDeEfFghHikKnNrR*?@',
 
             event: this.handleStringConfig,
         }
@@ -110,8 +122,8 @@ export default class AsciiShader extends ShaderObject {
             id: 'dogStrength',
             title: 'Controls the strength of the difference of gaussians - No effect if "Draw edges" is false',
             
-            default: 1,
-            value: 1,
+            default: 5,
+            value: 5,
 
             step: 0.1,
 
@@ -215,9 +227,16 @@ export default class AsciiShader extends ShaderObject {
         const brightnessBuffer = this.device.createBuffer({size: 4,usage: usage});
         this.device.queue.writeBuffer(brightnessBuffer, 0, new Float32Array([<number>this.config[brightness].value]));
 
+        // bitmap size
+        const bitmapString = <string>this.config[bitmapSet].value;
+        const bitmapSizeBuffer = this.device.createBuffer({size: 4,usage: usage});
+        this.device.queue.writeBuffer(bitmapSizeBuffer, 0, new Float32Array([bitmapString.length - 1]));
+        console.log(bitmapString.length - 1)
+
         // bitmaps
         // const bitmap = this.createBitmap(bitmapVer5_Data);
-        const bitmap = this.createBitmap(hinrikBitmap);
+        // const bitmap = this.createBitmap(bitmapVer5_Data);
+        const bitmap = this.createBitmap(this.bitmapAssembler.createBitmap(bitmapString));
         const bitmapEdge = this.createBitmap(bitmapEdgeVer1_Data);
 
         // DoG
@@ -309,6 +328,7 @@ export default class AsciiShader extends ShaderObject {
             {binding: 8, resource: {buffer: negColorBuffer}},
             {binding: 9, resource: { buffer: contrastBuffer }},
             {binding: 10, resource: { buffer: brightnessBuffer }},
+            {binding: 11, resource: { buffer: bitmapSizeBuffer }},
         ];
 
         const edgePasses: ShaderProgram[] = [
