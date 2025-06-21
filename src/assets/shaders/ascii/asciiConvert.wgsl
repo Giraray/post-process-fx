@@ -7,9 +7,7 @@
 @group(0) @binding(6) var<uniform> uCalculateEdges: i32;
 @group(0) @binding(7) var<uniform> uAsciiCol: vec3<f32>;
 @group(0) @binding(8) var<uniform> uBgCol: vec3<f32>;
-@group(0) @binding(9) var<uniform> uContrast: f32;
-@group(0) @binding(10) var<uniform> uBrightness: f32;
-@group(0) @binding(11) var<uniform> uBitmapSize: f32;
+@group(0) @binding(9) var<uniform> uBitmapSize: f32;
 
 struct VertexOutput {
     @builtin(position) Position : vec4<f32>,
@@ -113,15 +111,7 @@ fn frag_main(
     var fragCoord = pos.xy;
     var pixel = compressUV(8.0, fragCoord);
     var pixelTex = textureSample(uTexture, uSampler, pixel);
-
-    // apply contrast - Should experiment with pixelating in compute shader for more accurate results
-    pixelTex.r = mix(0.5, pixelTex.r + uBrightness - 1.0, uContrast);
-    pixelTex.g = mix(0.5, pixelTex.g + uBrightness - 1.0, uContrast);
-    pixelTex.b = mix(0.5, pixelTex.b + uBrightness - 1.0, uContrast);
-    pixelTex.r = clamp(0.0, 1.0, pixelTex.r);
-    pixelTex.g = clamp(0.0, 1.0, pixelTex.g);
-    pixelTex.b = clamp(0.0, 1.0, pixelTex.b);
-
+    
     var luma = getQuantizedLuma(pixelTex);
 
     var bitmapCoord = fragCoord % 8.0;

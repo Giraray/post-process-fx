@@ -8,13 +8,10 @@ struct OurVertexShaderOutput {
 ) -> OurVertexShaderOutput {
     let pos = array(
 
-        // mf QUAD!!!!
-        // 1st triangle
         vec2f( -1.0,  -1.0),  // bottom right
         vec2f( -1.0, 1.0),  // top right
         vec2f( 1.0,  -1.0),  // bottom right
 
-        // 2st triangle
         vec2f( 1.0,  1.0),  // top right
         vec2f( -1.0,  1.0),  // top left
         vec2f( 1.0,  -1.0),  // bottom right
@@ -31,7 +28,18 @@ struct OurVertexShaderOutput {
 
 @group(0) @binding(0) var ourSampler: sampler;
 @group(0) @binding(1) var ourTexture: texture_2d<f32>;
+@group(0) @binding(2) var<uniform> uContrast: f32;
+@group(0) @binding(3) var<uniform> uBrightness: f32;
 
 @fragment fn fragMain(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
-    return textureSample(ourTexture, ourSampler, fsInput.fragUV);
+    var tex = textureSample(ourTexture, ourSampler, fsInput.fragUV);
+
+    tex.r = mix(0.5, tex.r + uBrightness - 1.0, uContrast);
+    tex.g = mix(0.5, tex.g + uBrightness - 1.0, uContrast);
+    tex.b = mix(0.5, tex.b + uBrightness - 1.0, uContrast);
+    tex.r = clamp(0.0, 1.0, tex.r);
+    tex.g = clamp(0.0, 1.0, tex.g);
+    tex.b = clamp(0.0, 1.0, tex.b);
+
+    return tex;
 }

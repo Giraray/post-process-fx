@@ -1,3 +1,6 @@
+9 - 21.06.25
+- Moved brightness and contrast from ASCII shader to Img texture.
+
 8 - 18.06.25
 - Added bitmap set config for ASCII shader that dynamically adjusts the render resolution based on bitmap size. Still need to finish bitmap characters and clean up bitmaps.ts.
 - Added a try-catch for the GPU device, since an error might be cast if Vulkan is not enabled on the browser for linux users.

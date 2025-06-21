@@ -30,6 +30,17 @@ export class ImgTexture extends TextureObject {
         this.initTextureConfig(this.config, this);
     }
 
+    handleScale(target: HTMLInputElement, origin: ImgTexture, item: NumberConfig) {
+        let value = parseFloat(target.value);
+        if(isNaN(value))
+            value = 0;
+        item.value = value;
+
+        origin.resizeDimensions(<boolean>origin.config[origin.findIndex('resize')].value);
+        origin.resizeCanvas();
+        origin.render();
+    }
+
     handleResize(target: HTMLInputElement, origin: ImgTexture, item: BoolConfig) {
         let value = target.checked === true ? true : false;
         item.value = value;
@@ -39,7 +50,7 @@ export class ImgTexture extends TextureObject {
         origin.render();
     }
 
-    createConfig(): [BoolConfig] {
+    createConfig(): (BoolConfig | NumberConfig)[] {
         const resize: BoolConfig = {
             type: 'bool',
             label: 'Resize',
@@ -51,17 +62,57 @@ export class ImgTexture extends TextureObject {
 
             event: this.handleResize,
         };
-        return [resize];
+        const scale: NumberConfig = {
+            type: 'number',
+            label: 'Scale',
+            id: 'scale',
+            title: 'Scales the image - Does nothing if resize is on',
+
+            default: 1,
+            value: 1,
+            step: 0.1,
+
+            event: this.handleScale,
+        }
+        const contrast: NumberConfig = {
+            type: 'number',
+            label: 'Contrast',
+            id: 'contrast',
+            title: 'Contrast of the source image',
+            
+            default: 1.0,
+            value: 1.0,
+
+            step: 0.1,
+
+            event: this.handleNumberConfig,
+        }
+
+        const brightness: NumberConfig = {
+            type: 'number',
+            label: 'Brightness',
+            id: 'brightness',
+            title: 'Brightness of the source image - Does not change much without an extraordinary large amount. \nLooks cool when it does though',
+            
+            default: 1.0,
+            value: 1.0,
+
+            step: 0.1,
+
+            event: this.handleNumberConfig,
+        }
+        return [resize, scale, contrast, brightness];
     }
 
     resizeDimensions(resize: boolean) {
         const w = this.preferredContainerSize.width;
         const h = this.preferredContainerSize.height;
+        const scale = <number>this.config[this.findIndex('scale')].value;
 
         if(resize === false) {
             this.sizeMultiplier = {
-                width: 1,
-                height: 1,
+                width: 1 * scale,
+                height: 1 * scale,
             };
         }
         else {
@@ -122,6 +173,21 @@ export class ImgTexture extends TextureObject {
             },
         })
 
+        // configs
+        const contrast = this.findIndex('contrast');
+        const brightness = this.findIndex('brightness');
+
+        const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
+
+        // contrast
+        const contrastBuffer = this.device.createBuffer({size: 4,usage: usage});
+        this.device.queue.writeBuffer(contrastBuffer, 0, new Float32Array([<number>this.config[contrast].value]));
+
+        // brightness
+        const brightnessBuffer = this.device.createBuffer({size: 4,usage: usage});
+        this.device.queue.writeBuffer(brightnessBuffer, 0, new Float32Array([<number>this.config[brightness].value]));
+
+        
         // sampler
        const sampler = device.createSampler();
 
@@ -131,39 +197,12 @@ export class ImgTexture extends TextureObject {
             entries: [
                 {binding: 0, resource: sampler},
                 {binding: 1, resource: texture.createView()},
+                {binding: 2, resource: { buffer: contrastBuffer }},
+                {binding: 3, resource: { buffer: brightnessBuffer }},
             ],
         });
 
         this.bindGroup = bindGroup;
         this.pipeline = pipeline;
-    }
-
-    public resizeCanvas() {
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
-        const body = document.getElementsByTagName('body')[0];
-
-        if(this.size.width > vw) {
-            this.container.style.justifyContent = 'flex-start';
-            body.style.alignItems = 'start';
-        }
-        else {
-            this.container.style.justifyContent = 'center';
-            body.style.alignItems = 'center';
-        }
-
-        if(this.size.height > vh) {
-            this.container.style.alignItems = 'flex-start';
-        }
-        else {
-            this.container.style.alignItems = 'center';
-        }
-
-        const canvas = <HTMLCanvasElement>this.context.canvas;
-        canvas.width = this.size.width;
-        canvas.height = this.size.height;
-
-        canvas.style.width = this.size.width + 'px';
-        canvas.style.height = this.size.height + 'px';
     }
 }

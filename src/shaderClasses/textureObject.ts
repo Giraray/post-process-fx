@@ -149,4 +149,33 @@ export abstract class TextureObject extends ObjectBase {
 
         this.dataUrl = (<HTMLCanvasElement>this.context.canvas).toDataURL('image/png');
     }
+
+    public resizeCanvas() {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const body = document.getElementsByTagName('body')[0];
+
+        if(this.size.width > vw) {
+            this.container.style.justifyContent = 'flex-start';
+            body.style.alignItems = 'start';
+        }
+        else {
+            this.container.style.justifyContent = 'center';
+            body.style.alignItems = 'center';
+        }
+
+        if(this.size.height > vh) {
+            this.container.style.alignItems = 'flex-start';
+        }
+        else {
+            this.container.style.alignItems = 'center';
+        }
+
+        const canvas = <HTMLCanvasElement>this.context.canvas;
+        canvas.width = this.size.width;
+        canvas.height = this.size.height;
+
+        canvas.style.width = this.size.width + 'px';
+        canvas.style.height = this.size.height + 'px';
+    }
 }

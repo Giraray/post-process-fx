@@ -35,8 +35,6 @@ struct VertexShaderOutput {
 @group(0) @binding(1) var uTexture: texture_2d<f32>;
 @group(0) @binding(2) var<uniform> uResolution: vec2<f32>;
 @group(0) @binding(3) var<uniform> uSigmaSubtract: f32;
-@group(0) @binding(4) var<uniform> uContrast: f32;
-@group(0) @binding(5) var<uniform> uBrightness: f32;
 
 const MATRIX_SIZE : i32 = 11;
 const KERNEL_SIZE : i32 = (MATRIX_SIZE - 1)/2;
@@ -73,15 +71,6 @@ fn blur(fragCoord: vec2<f32>, sigma: f32) -> vec3<f32> {
     for(var i = -kSize; i <= kSize; i++) {
         for(var j = -kSize; j <= kSize; j++) {
             var texel = textureSample(uTexture, uSampler, (fragCoord + vec2(f32(i), f32(j))) / uResolution);
-
-            // apply contrast + brightness
-            texel.r = mix(0.5, texel.r + uBrightness - 1.0, uContrast);
-            texel.g = mix(0.5, texel.g + uBrightness - 1.0, uContrast);
-            texel.b = mix(0.5, texel.b + uBrightness - 1.0, uContrast);
-
-            texel.r = clamp(0.0, 1.0, texel.r);
-            texel.g = clamp(0.0, 1.0, texel.g);
-            texel.b = clamp(0.0, 1.0, texel.b);
 
             blur += kernel[kSize + j] * kernel[kSize + i] * texel.rgb;
         }

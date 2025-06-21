@@ -130,35 +130,7 @@ export default class AsciiShader extends ShaderObject {
             event: this.handleNumberConfig,
         }
 
-        const contrast: NumberConfig = {
-            type: 'number',
-            label: 'Contrast',
-            id: 'contrast',
-            title: 'Contrast of the source image',
-            
-            default: 1.0,
-            value: 1.0,
-
-            step: 0.1,
-
-            event: this.handleNumberConfig,
-        }
-
-        const brightness: NumberConfig = {
-            type: 'number',
-            label: 'Brightness',
-            id: 'brightness',
-            title: 'Brightness of the source image - Does not change much without an extraordinary large amount. \nLooks cool when it does though',
-            
-            default: 1.0,
-            value: 1.0,
-
-            step: 0.1,
-
-            event: this.handleNumberConfig,
-        }
-
-        return [drawEdges, edgeThreshold, dogStrength, bitmapSet, colorAscii, colorBg, contrast, brightness];
+        return [drawEdges, edgeThreshold, dogStrength, bitmapSet, colorAscii, colorBg];
     }
 
     createBitmap(data: Bitmap): GPUTexture {
@@ -187,8 +159,6 @@ export default class AsciiShader extends ShaderObject {
         const colorAscii = this.findIndex('colorAscii');
         const colorBg = this.findIndex('colorBg');
         const dogStrength = this.findIndex('dogStrength');
-        const contrast = this.findIndex('contrast');
-        const brightness = this.findIndex('brightness');
 
         // buffer for compute
         const colorBuffer = this.device.createTexture({
@@ -219,14 +189,6 @@ export default class AsciiShader extends ShaderObject {
         const dogStrengthBuffer = this.device.createBuffer({size: 4,usage: usage});
         this.device.queue.writeBuffer(dogStrengthBuffer, 0, new Float32Array([<number>this.config[dogStrength].value]));
 
-        // contrast
-        const contrastBuffer = this.device.createBuffer({size: 4,usage: usage});
-        this.device.queue.writeBuffer(contrastBuffer, 0, new Float32Array([<number>this.config[contrast].value]));
-
-        // DoG brightness
-        const brightnessBuffer = this.device.createBuffer({size: 4,usage: usage});
-        this.device.queue.writeBuffer(brightnessBuffer, 0, new Float32Array([<number>this.config[brightness].value]));
-
         // bitmap size
         const bitmapString = <string>this.config[bitmapSet].value;
         const bitmapSizeBuffer = this.device.createBuffer({size: 4,usage: usage});
@@ -245,8 +207,6 @@ export default class AsciiShader extends ShaderObject {
             {binding: 1, resource: this.texture.createView()},
             {binding: 2, resource: { buffer: resBuffer }},
             {binding: 3, resource: { buffer: dogStrengthBuffer }},
-            {binding: 4, resource: { buffer: contrastBuffer }},
-            {binding: 5, resource: { buffer: brightnessBuffer }},
         ];
 
         // SOBEL
@@ -326,9 +286,7 @@ export default class AsciiShader extends ShaderObject {
             {binding: 6, resource: {buffer: calculateEdgeBoolBuffer}},
             {binding: 7, resource: {buffer: posColorBuffer}},
             {binding: 8, resource: {buffer: negColorBuffer}},
-            {binding: 9, resource: { buffer: contrastBuffer }},
-            {binding: 10, resource: { buffer: brightnessBuffer }},
-            {binding: 11, resource: { buffer: bitmapSizeBuffer }},
+            {binding: 9, resource: { buffer: bitmapSizeBuffer }},
         ];
 
         const edgePasses: ShaderProgram[] = [
