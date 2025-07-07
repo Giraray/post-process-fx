@@ -195,8 +195,8 @@ dogSelect.addEventListener('click', function() {
 initTexture(createImgTexture(source));
 
 // add default shaders for testing here vvvvvvv
-const celShader = new CelShader(device, canvasFormat);
-const asciiShader = new AsciiShader(device, canvasFormat);
+// const celShader = new CelShader(device, canvasFormat);
+// const asciiShader = new AsciiShader(device, canvasFormat);
 // initShader(asciiShader);
 // remove
 

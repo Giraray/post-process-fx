@@ -1,3 +1,7 @@
+11 - 07.07.25
+- Added ASCII bitmap presets, including a "custom" option
+- bitmaps.ts is now CLEAN!
+
 10 - 07.07.25
 - Dynamic ASCII bitmap sets are now ready! Cleaned up lots of code.
 

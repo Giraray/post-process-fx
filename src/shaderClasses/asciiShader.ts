@@ -4,10 +4,9 @@ import asciiDownscaleCode from '../assets/shaders/ascii/asciiDownscale.wgsl?raw'
 import asciiConvertCode from '../assets/shaders/ascii/asciiConvert.wgsl?raw';
 import {ShaderObject, ProgramInstructions, ShaderProgram} from './shaderObject';
 
-import {NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ColorConfig, ConfigInputBase} from './objectBase';
+import {NumberConfig, EnumConfig, BoolConfig, RangeConfig, StringConfig, ColorConfig, ConfigInputBase, ObjectBase} from './objectBase';
 
-import {Bitmap, bitmapEdgeVer1_Data, bitmapVer4_Data, bitmapVer5_Data } from '../assets/bitmaps/bitmaps';
-import {BitmapAssembler} from '../util/bitmapClasses';
+import {BitmapAssembler, Bitmap} from '../util/bitmapClasses';
 
 export default class AsciiShader extends ShaderObject {
     bitmapAssembler: BitmapAssembler;
@@ -43,8 +42,20 @@ export default class AsciiShader extends ShaderObject {
         this.updateMetadata();
     }
 
-    handleBitmapConfig(target: HTMLInputElement, origin: AsciiShader, item: StringConfig) {
+    handleCustomEnumConfig(target: HTMLInputElement, origin: ObjectBase, item: EnumConfig) {
         let value = target.value;
+
+        if(value == 'custom') {
+            value = prompt('Type the letters you want to render. They are sorted automatically. Multiples are allowed.\n* is a block!');
+        }
+        if(value == "") {
+            alert('Custom character set must have at least 1 character');
+            return;
+        }
+        if(value == null) {
+            return;
+        }
+
         item.value = value;
 
         origin.render({
@@ -81,19 +92,36 @@ export default class AsciiShader extends ShaderObject {
             event: this.handleNumberConfig,
         }
 
-        const bitmapSet: StringConfig = { // todo indepth user explanation
+        const edgeBitmapSet: StringConfig = { // todo indepth user explanation
             type: 'string',
-            label: 'Characters',
-            id: 'bitmapSet',
-            title: "Characters to render",
+            label: 'Edge chars',
+            id: 'edgeSet',
+            title: "Characters for edge bitmap set (needs 4)",
             
-            default: ' .:-+r?caK@NEB*',
-            value: ' .:-+r?caK@NEB*',
-
-            // uniformly spaced:  .:-+r?caK@NEB*
-            // all:  .-+:;aAbBcCdDeEfFghHikKnNrR*?@'
+            default: '/\\_|',
+            value: '/\\_|',
 
             event: this.handleStringConfig,
+        }
+
+        const bitmapSet: EnumConfig = {
+            type: 'enum',
+            label: 'Characters',
+            id: 'bitmapSet',
+            title: 'Characters to render',
+
+            default: 'uniform',
+            value: 'uniform',
+
+            options: [
+                {label: 'Uniform', id: 'uniform'},
+                {label: 'Detail', id: 'Detail'},
+                {label: 'Leet', id: 'leet'},
+                {label: 'Binary', id: 'binary'},
+                {label: 'Custom', id: 'custom'},
+            ],
+
+            event: this.handleCustomEnumConfig,
         }
 
         const colorAscii: ColorConfig = {
@@ -157,9 +185,34 @@ export default class AsciiShader extends ShaderObject {
         return bitmap;
     }
 
+    selectBitmapPreset(preset: string): string {
+        let bitmap: string;
+        switch(preset.toLowerCase()) {
+            case 'uniform':
+                bitmap = ' .:-+r?caK@NEB*';
+                break;
+            case 'detail':
+                bitmap = ' .-+:;aAbBcCdDeEfFghHikKnNrR*?@'
+                break;
+            case 'leet':
+                bitmap = ' .,17360?+';
+                break;
+            case 'binary':
+                bitmap = '  *';
+                break;
+
+            // if custom
+            default:
+                bitmap = preset;
+                break;
+        }
+        return bitmap;
+    }
+
     createInstructions(time: number, width: number, height: number): ProgramInstructions {
         const drawEdges = this.findIndex('drawEdges');
         const edgeThreshold = this.findIndex('edgeThreshold');
+        const edgeSet = this.findIndex('edgeSet');
         const bitmapSet = this.findIndex('bitmapSet');
         const colorAscii = this.findIndex('colorAscii');
         const colorBg = this.findIndex('colorBg');
@@ -195,9 +248,12 @@ export default class AsciiShader extends ShaderObject {
         this.device.queue.writeBuffer(dogStrengthBuffer, 0, new Float32Array([10]));
 
         // bitmaps
-        const bitmapString = <string>this.config[bitmapSet].value;
+        const bitmapPreset = <string>this.config[bitmapSet].value;
+        const bitmapString = this.selectBitmapPreset(bitmapPreset);
+        // const edgeString = <string>this.config[edgeSet].value;
         const bitmap = this.createBitmapTexture(this.bitmapAssembler.createBitmap(bitmapString));
-        const bitmapEdge = this.createBitmapTexture(this.bitmapAssembler.createBitmap("/\\_|", true));
+        // const bitmapEdge = this.createBitmapTexture(this.bitmapAssembler.createBitmap(edgeString, true));
+        const bitmapEdge = this.createBitmapTexture(this.bitmapAssembler.createBitmap('/\\_|', true));
 
         // bitmap size
         const bitmapSizeBuffer = this.device.createBuffer({size: 4,usage: usage});

@@ -1,16 +1,12 @@
 import * as BM from '../assets/bitmaps/bitmaps';
 import {gaussianBlur, generateGaussianKernel} from './gaussianWeight'
 
-interface BitmapDescriptor {
-    isEdge?: boolean;
-}
-
 interface Size {
     width: number;
     height: number;
 }
 
-interface Bitmap {
+export interface Bitmap {
     size: Size;
     data: Uint8Array;
 }
@@ -29,6 +25,7 @@ const _ = [0,0,0,255]; // black
 export class BitmapAssembler {
     cBackspace = BM.cBackspace;
     cDot = BM.cDot;
+    cComma = BM.cComma;
     cMinus = BM.cMinus;
     cPlus = BM.cPlus;
     cColon = BM.cColon;
@@ -40,7 +37,6 @@ export class BitmapAssembler {
     cBSlash = BM.cBSlash;
     cDash = BM.cDash;
     cBar = BM.cBar;
-    cHalfFull = BM.cHalfFull;
     ca = BM.ca;
     cA = BM.cA;
     cb = BM.cb;
@@ -65,7 +61,22 @@ export class BitmapAssembler {
     cr = BM.cr;
     cR = BM.cR;
 
-    // return character bitmap string
+    c1 = BM.c1;
+    c2 = BM.c2;
+    c3 = BM.c3;
+    c4 = BM.c4;
+    c5 = BM.c5;
+    c6 = BM.c6;
+    c7 = BM.c7;
+    c8 = BM.c8;
+    c9 = BM.c9;
+    c0 = BM.c0;
+
+    cSection = BM.cSection;
+    cCloseBracket = BM.cCloseBracket;
+    cOpenBracket = BM.cOpenBracket;
+
+    // return character bitmap string from BM namespace
     public getChar(suffix: string): string {
 
         // sanitize special characters
@@ -113,15 +124,26 @@ export class BitmapAssembler {
             case "|":
                 suffix = "Bar";
                 break;
-            case "%":
-                suffix = "HalfFull";
+            case "§":
+                suffix = "Section";
                 break;
-
+            case "(":
+                suffix = "OpenBracket";
+                break;
+            case ")":
+                suffix = "CloseBracket";
+                break;
         }
         const char = this["c" + suffix];
         return char;
     }
 
+    /**
+     * Processes a string into a cohesive `Bitmap` based on bitmap characters defined in namespace `BM`.
+     * @param string String of characters to be used in bitmap
+     * @param isEdge Whether or not the bitmap is used for ASCII edges. Only changes whether or not characters are sorted
+     * @returns 
+     */
     public createBitmap(string: string, isEdge?: boolean): Bitmap {
         const chars = [];
         const invalid = [];
@@ -152,9 +174,13 @@ export class BitmapAssembler {
             }
 
             let plural = '';
-            if(invalid.length > 1) {plural = 's';}
+            let is = 'is';
+            if(invalid.length > 1) {
+                plural = 's';
+                is = 'are';
+            }
 
-            alert('Character'+plural+' '+errorStr+'are invalid')
+            alert('Character'+plural+' '+errorStr+is+' invalid')
         }
 
         const width = 8*chars.length;
@@ -167,6 +193,7 @@ export class BitmapAssembler {
         return bitmap;
     }
 
+    // converts a string of bitmap characters into a data array, which is then used to generate bitmap texture
     dataToArray(data: string, resolution: number): Uint8Array {
 
         const array = new Uint8Array(resolution);
@@ -184,11 +211,8 @@ export class BitmapAssembler {
         return array;
     }
 
+    // processes an array of bitmap characters into one cohesive string
     assembleChars(arr: string[], isEdge: boolean): string {
-        console.log(arr)
-        for(let i = 0; i < arr.length; i++) {
-            console.log(this.getCharBrightness(arr[i]))
-        }
 
         // dont sort if its an edge bitmap
         if(!isEdge) {arr = this.sortByBrightness(arr);}
@@ -218,6 +242,7 @@ export class BitmapAssembler {
         return arr;
     }
 
+    // counts the pixels in a character
     getCharBrightness(char: string): Number {
         let x = 0;
         for(let i = 0; i < char.length; i++) {
@@ -227,7 +252,28 @@ export class BitmapAssembler {
         }
         return x;
     }
+
+    // Only for testing  vvv
+    public logAllBrightness(string: string): void {
+        const invalid = [];
+        for(let i = 0; i < string.length; i++) {
+            const currCharFromString = string[i];
+            const char = this.getChar(currCharFromString);
+
+            if(char == undefined) {
+                invalid.push(string[i]);
+                continue;
+            }
+
+            const brightness = this.getCharBrightness(char);
+            console.log(currCharFromString, brightness);
+        }
+        console.log('Omitted letters:',invalid);
+    }
 }
+
+const assembler = new BitmapAssembler();
+assembler.logAllBrightness(' ,17360§*(');
 
 // -------------------------------------------------
 // vvv  UNUSED CLASS. I WANT TO KEEP IT THOUGH  vvv

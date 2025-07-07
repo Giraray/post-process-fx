@@ -1,34 +1,3 @@
-const O = [255,255,255,255]; // white
-const _ = [0,0,0,255]; // black
-
-interface Size {
-    width: number;
-    height: number;
-}
-
-export interface Bitmap {
-    size: Size;
-    data: Uint8Array;
-}
-
-function dataToArray(data: string, resolution: number): Uint8Array {
-
-    const array = new Uint8Array(resolution);
-    const cleanData = data.replace(/\s/g, '');
-
-    for(let i = 0; i < cleanData.length; i++) {
-        const pixel = cleanData[i] === '0' ? O : _;
-
-        array[i * 4] = pixel[0];      // r
-        array[i * 4 + 1] = pixel[1];  // g
-        array[i * 4 + 2] = pixel[2];  // b
-        array[i * 4 + 3] = pixel[3];  // a
-    }
-
-    return array;
-}
-
-const bitmapVer3_Resolution = 80*8*4; // w * h * rgba
 const bitmapVer3_String = `
     --------------------------------------------------------------------------------
     ----------------------------0-------------0000----0000---00---0----00-----0000--
@@ -39,12 +8,6 @@ const bitmapVer3_String = `
     -----------0----------------0------00------0------000----0---00----00------00---
     --------------------------------------------------------------------------------
 `
-export const bitmapVer3_Data: Bitmap = {
-    size: {width: 80, height: 8},
-    data: dataToArray(bitmapVer3_String, bitmapVer3_Resolution)
-}
-
-const bitmapVer4_Resolution = 80*8*4;
 const bitmapVer4_String = `
 --------------------------------------------------------------------------------
 ------------------------------------------000------00------00-----0000--0000000-
@@ -56,12 +19,7 @@ const bitmapVer4_String = `
 --------------------------------------------------------------------------------
 `;
 
-export const bitmapVer4_Data: Bitmap = {
-    size: {width: 80, height: 8},
-    data: dataToArray(bitmapVer4_String, bitmapVer4_Resolution),
-}
 
-const bitmapVer5_Resolution = 80*8*4;
 const bitmapVer5_String = `
 --------------------------------------------------------------------------------
 ---------------------------------------------------00------00-----0000--0000000-
@@ -73,15 +31,6 @@ const bitmapVer5_String = `
 --------------------------------------------------------------------------------
 `;
 
-export const bitmapVer5_Data: Bitmap = {
-    size: {width: 80, height: 8},
-    data: dataToArray(bitmapVer5_String, bitmapVer5_Resolution),
-}
-
-
-
-
-const bitmapEdgeVer1_Resolution = 32*8*4;
 const bitmapEdgeVer1_String = `
 -----0---0----------------------
 ----0-----0----------------0----
@@ -93,12 +42,6 @@ const bitmapEdgeVer1_String = `
 -0-----------0------------------
 `
 
-export const bitmapEdgeVer1_Data: Bitmap = {
-    size: {width: 32, height: 8},
-    data: dataToArray(bitmapEdgeVer1_String, bitmapEdgeVer1_Resolution),
-}
-
-// tests
 export const cMiddle_1px = `
 --------
 --------
@@ -119,7 +62,6 @@ export const cCorner_1px = `
 --------
 --------
 `
-// tests end
 
 export const cBackspace = `
 --------
@@ -181,6 +123,16 @@ export const cDot = `
 --------
 ---0----
 --------
+`
+export const cComma = `
+--------
+--------
+--------
+--------
+--------
+--------
+---0----
+--0-----
 `
 export const cColon = `
 --------
@@ -482,13 +434,135 @@ export const cBlock = `
 0000000-
 --------
 `
-export const cHalfFull = `
-0000----
-0000----
-0000----
-0000----
-----0000
-----0000
-----0000
-----0000
+
+// 01395@?+. 
+export const c0 = `
+--------
+--000---
+-0---0--
+-0--00--
+-0-0-0--
+-00--0--
+--000---
+--------
+`
+export const c1 = `
+--------
+----0---
+---00---
+----0---
+----0---
+----0---
+---000--
+--------
+`
+export const c2 = `
+--------
+---000--
+--0---0-
+------0-
+---0000-
+--0-----
+--00000-
+--------
+`
+export const c3 = `
+--------
+--0000--
+------0-
+----00--
+------0-
+------0-
+--0000--
+--------
+`
+export const c4 = `
+--------
+-----0--
+----00--
+---0-0--
+--0--0--
+--00000-
+-----0--
+-----0--
+`
+export const c5 = `
+--------
+--00000-
+--0-----
+--0000--
+------0-
+------0-
+--0000--
+--------
+`
+export const c6 = `
+--------
+---000--
+--0-----
+--0000--
+--0---0-
+--0---0-
+---000--
+--------
+`
+export const c7 = `
+--------
+-000000-
+------0-
+-----0--
+----0---
+----0---
+----0---
+--------
+`
+export const c8 = `
+--------
+--0000--
+-0----0-
+--0000--
+-0----0-
+-0----0-
+--0000--
+--------
+`
+export const c9 = `
+--------
+---000--
+--0---0-
+---0000-
+------0-
+-----0--
+----0---
+--------
+`
+export const cSection = `
+--------
+--00000-
+-0------
+--0000--
+-0----0-
+--0000--
+------0-
+-00000--
+`
+export const cOpenBracket = `
+--------
+----0---
+---0----
+---0----
+---0----
+---0----
+----0---
+--------
+`
+export const cCloseBracket = `
+--------
+---0----
+----0---
+----0---
+----0---
+----0---
+---0----
+--------
 `

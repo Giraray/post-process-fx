@@ -105,7 +105,7 @@ export default class CelShader extends ShaderObject {
             type: 'number',
             label: 'Quantize',
             id: 'quantize',
-            title: 'Color divisions - Generates a random palette',
+            title: 'Color divisions',
 
             default: 4,
             value: 4,
