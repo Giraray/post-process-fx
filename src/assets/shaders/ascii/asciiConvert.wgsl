@@ -8,6 +8,7 @@
 @group(0) @binding(7) var<uniform> uAsciiCol: vec3<f32>;
 @group(0) @binding(8) var<uniform> uBgCol: vec3<f32>;
 @group(0) @binding(9) var<uniform> uBitmapSize: f32;
+@group(0) @binding(10) var<uniform> uEdgeBitmapSize: f32;
 
 struct VertexOutput {
     @builtin(position) Position : vec4<f32>,
@@ -64,7 +65,7 @@ fn compressUV(scale: f32, fragCoord: vec2<f32>) -> vec2<f32> {
 
 fn getQuantizedLuma(frag: vec4<f32>) -> f32 {
     var fragLuma = frag.r * 0.2126 + frag.g * 0.7152 + frag.b * 0.0722;
-    return floor(fragLuma * uBitmapSize)/uBitmapSize;
+    return ceil(fragLuma * uBitmapSize)/uBitmapSize;
 }
 
 fn getBitmapOffset(luma: f32) -> f32 {

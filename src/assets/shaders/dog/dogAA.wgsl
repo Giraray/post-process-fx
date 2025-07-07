@@ -9,13 +9,10 @@ struct VertexShaderOutput {
 ) -> VertexShaderOutput {
     let pos = array(
 
-        // mf QUAD!!!!
-        // 1st triangle
         vec2f( -1.0,  -1.0),  // bottom right
         vec2f( -1.0,  1.0),  // top right
         vec2f( 1.0,  -1.0),  // bottom right
 
-        // 2st triangle
         vec2f( 1.0,  1.0),  // top right
         vec2f( -1.0,  1.0),  // top left
         vec2f( 1.0,  -1.0),  // bottom right

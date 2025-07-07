@@ -20,13 +20,10 @@ struct OurVertexShaderOutput {
 ) -> OurVertexShaderOutput {
     let pos = array(
 
-        // mf QUAD!!!!
-        // 1st triangle
         vec2f( -1.0,  -1.0),  // bottom right
         vec2f( -1.0,  1.0),  // top right
         vec2f( 1.0,  -1.0),  // bottom right
 
-        // 2st triangle
         vec2f( 1.0,  1.0),  // top right
         vec2f( -1.0,  1.0),  // top left
         vec2f( 1.0,  -1.0),  // bottom right
@@ -51,13 +48,28 @@ fn vec3Equals(a: vec3<f32>, b: vec3<f32>) -> bool {
 }
 
 fn randomGradient(corner: vec2<f32>) -> vec2<f32> {
-        var x = dot(corner, vec2(1.9, 1.2));
-        var y = dot(corner, vec2(2.3, 1.3));
-        var gradient = vec2(x,y);
-        gradient = sin(gradient);
-        gradient = gradient * uSeed + uTime*0.3*uSpeed;
-        gradient = sin(gradient);
-        return gradient;
+    var x = dot(corner, vec2(1.9, 1.2));
+    var y = dot(corner, vec2(2.3, 1.3));
+    var gradient = vec2(x,y);
+    gradient = sin(gradient);
+    gradient = gradient * uSeed + uTime*0.3*uSpeed;
+    gradient = sin(gradient);
+    return gradient;
+}
+
+const PI : f32 = 3.141592653589793238;
+
+fn sphericalRandGradient(corner: vec2<f32>) -> vec2<f32> {
+    var theta = acos(2.0 * uSeed - 1.0);
+    var phi = 2.0 * (uSeed) * PI;
+
+    var x = cos(phi) * sin(theta);
+    var y = sin(phi) * sin(theta);
+
+    // var gradient = dot(vec2(x,y), corner);
+    // gradient = gradient * uTime*0.3*uSpeed;
+
+    return vec2(x,y);
 }
 
 fn quintic(p: vec2<f32>) -> vec2<f32> {
@@ -84,6 +96,11 @@ fn quintic(p: vec2<f32>) -> vec2<f32> {
     var gradTr = randomGradient(tr);
     var gradBl = randomGradient(bl);
     var gradBr = randomGradient(br);
+
+    // var gradTl = sphericalRandGradient(tl);
+    // var gradTr = sphericalRandGradient(tr);
+    // var gradBl = sphericalRandGradient(bl);
+    // var gradBr = sphericalRandGradient(br);
 
     // find distance from fragUV to each corner
     var fragToTl = gridUv;

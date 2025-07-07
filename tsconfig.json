@@ -1,9 +1,11 @@
 {
     "compilerOptions": {
+      "noEmit": true,
+      "allowImportingTsExtensions": true,
       "lib": ["ESNext", "dom"],
       "types": [
         "vite/client",
         "@webgpu/types"
     ]
-    }
+    },
   }

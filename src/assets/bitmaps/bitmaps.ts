@@ -83,14 +83,14 @@ export const bitmapVer5_Data: Bitmap = {
 
 const bitmapEdgeVer1_Resolution = 32*8*4;
 const bitmapEdgeVer1_String = `
-    -----0---0----------------------
-    ----0-----0----------------0----
-    ----0-----0----------------0----
-    ---0-------0---------------0----
-    ---0-------0-----000000----0----
-    --0---------0--------------0----
-    --0---------0--------------0----
-    -0-----------0------------------
+-----0---0----------------------
+----0-----0----------------0----
+----0-----0----------------0----
+---0-------0---------------0----
+---0-------0-----000000----0----
+--0---------0--------------0----
+--0---------0--------------0----
+-0-----------0------------------
 `
 
 export const bitmapEdgeVer1_Data: Bitmap = {
@@ -98,54 +98,30 @@ export const bitmapEdgeVer1_Data: Bitmap = {
     data: dataToArray(bitmapEdgeVer1_String, bitmapEdgeVer1_Resolution),
 }
 
-// bubble sort based on brightness
-function sortByBrightness(arr: string[]): string[] {
-    for(let pass = 0; pass < arr.length; pass++) {
-        for(let i = 0; i < arr.length - 1; i++) {
-            if(getCharBrightness(arr[i]) > getCharBrightness(arr[i + 1])) {
-                const nextChar = arr[i+1];
-                // console.log('swapped: ' + (arr[i]) + ' with ' + (arr[i+1]))
-                arr[i+1] = arr[i];
-                arr[i] = nextChar;
-            }
-        }
-    }
+// tests
+export const cMiddle_1px = `
+--------
+--------
+--------
+--------
+----0---
+--------
+--------
+--------
+`
+export const cCorner_1px = `
+0-------
+--------
+--------
+--------
+--------
+--------
+--------
+--------
+`
+// tests end
 
-    return arr;
-}
-
-function getCharBrightness(char: string): Number {
-    let x = 0;
-    for(let i = 0; i < char.length; i++) {
-        if(char[i] === '0') {
-            x += 1;
-        }
-    }
-    return x;
-}
-
-// todo validation
-/**
- * Assembles bitmap characters into a single data string, sorting them by "brightness" 
- * in the process.
- * @param arr String of bitmap characters.
- * @returns Data string containing the assembled bitmap.
- */
-function assembleChars(arr: string[]): string {
-    const chars = arr.length;
-    arr = sortByBrightness(arr);
-
-    let bitmapString = '';
-    for(let i = 1; i <= 10; i++) {
-        for(let j = 0; j < chars; j++) {
-            const line = arr[j].split('\n')[i];
-            bitmapString = bitmapString.concat(line);
-        }
-    }
-    return bitmapString;
-}
-
-const cBackspace = `
+export const cBackspace = `
 --------
 --------
 --------
@@ -155,8 +131,48 @@ const cBackspace = `
 --------
 --------
 `
+export const cFSlash = `
+-----0--
+----0---
+----0---
+---0----
+---0----
+--0-----
+--0-----
+-0------
+`
+export const cBSlash = `
+-0------
+--0-----
+--0-----
+---0----
+---0----
+----0---
+----0---
+-----0--
+`
+export const cDash = `
+--------
+--------
+--------
+--------
+-000000-
+--------
+--------
+--------
+`
+export const cBar = `
+--------
+---0----
+---0----
+---0----
+---0----
+---0----
+---0----
+--------
+`
 
-const cDot = `
+export const cDot = `
 --------
 --------
 --------
@@ -166,8 +182,7 @@ const cDot = `
 ---0----
 --------
 `
-
-const cColon = `
+export const cColon = `
 --------
 --------
 --------
@@ -177,8 +192,7 @@ const cColon = `
 ---0----
 --------
 `
-
-const cSemicolon = `
+export const cSemicolon = `
 --------
 --------
 --------
@@ -188,8 +202,7 @@ const cSemicolon = `
 ---0----
 --------
 `
-
-const cMinus = `
+export const cMinus = `
 --------
 --------
 --------
@@ -199,8 +212,7 @@ const cMinus = `
 --------
 --------
 `
-
-const cPlus = `
+export const cPlus = `
 --------
 --------
 --------
@@ -210,8 +222,7 @@ const cPlus = `
 --------
 --------
 `
-
-const ca = `
+export const ca = `
 --------
 --------
 --------
@@ -221,8 +232,7 @@ const ca = `
 --0000--
 --------
 `;
-
-const cA = `
+export const cA = `
 --------
 --000---
 -0---0--
@@ -231,9 +241,8 @@ const cA = `
 -00000--
 -0---0--
 -0---0--
-`;
-
-const cb = `
+`
+export const cb = `
 --------
 -0------
 -0------
@@ -243,8 +252,7 @@ const cb = `
 -0000---
 --------
 `;
-
-const cB = `
+export const cB = `
 --------
 -00000--
 -0----0-
@@ -254,8 +262,7 @@ const cB = `
 -0----0-
 -00000--
 `;
-
-const cc = `
+export const cc = `
 --------
 --------
 --000---
@@ -265,8 +272,7 @@ const cc = `
 --000---
 --------
 `;
-
-const cC = `
+export const cC = `
 --------
 --0000--
 -0----0-
@@ -276,8 +282,7 @@ const cC = `
 -0----0-
 --0000--
 `;
-
-const cd = `
+export const cd = `
 --------
 -----0--
 -----0--
@@ -287,8 +292,7 @@ const cd = `
 --0000--
 --------
 `;
-
-const cD = `
+export const cD = `
 --------
 -00000--
 -0----0-
@@ -298,8 +302,7 @@ const cD = `
 -0----0-
 -00000--
 `;
-
-const ce = `
+export const ce = `
 --------
 --------
 --000---
@@ -309,8 +312,7 @@ const ce = `
 --000---
 --------
 `;
-
-const cE = `
+export const cE = `
 --------
 -000000-
 -0------
@@ -320,8 +322,7 @@ const cE = `
 -0------
 -000000-
 `;
-
-const cf = `
+export const cf = `
 --------
 ---00---
 --0--0--
@@ -331,8 +332,7 @@ const cf = `
 --0-----
 --------
 `;
-
-const cF = `
+export const cF = `
 --------
 -000000-
 -0------
@@ -342,8 +342,7 @@ const cF = `
 -0------
 -0------
 `;
-
-const cg = `
+export const cg = `
 --------
 --------
 --000---
@@ -353,8 +352,7 @@ const cg = `
 -----0--
 --000---
 `;
-
-const ch = `
+export const ch = `
 --------
 -0------
 -0------
@@ -364,8 +362,7 @@ const ch = `
 -0---0--
 --------
 `;
-
-const cH = `
+export const cH = `
 --------
 -0----0-
 -0----0-
@@ -375,8 +372,7 @@ const cH = `
 -0----0-
 -0----0-
 `;
-
-const ci = `
+export const ci = `
 --------
 ---0----
 --------
@@ -386,8 +382,7 @@ const ci = `
 ---0----
 --------
 `
-
-const cI = `
+export const cI = `
 --------
 --000---
 ---0----
@@ -397,8 +392,7 @@ const cI = `
 ---0----
 --000---
 `
-
-const ck = `
+export const ck = `
 --------
 -0------
 -0---0--
@@ -408,8 +402,7 @@ const ck = `
 -0---0--
 --------
 `
-
-const cK = `
+export const cK = `
 --------
 -0----0-
 -0---0--
@@ -419,8 +412,7 @@ const cK = `
 -0---0--
 -0----0-
 `
-
-const cn = `
+export const cn = `
 --------
 --------
 --------
@@ -430,8 +422,7 @@ const cn = `
 -0---0--
 --------
 `
-
-const cN = `
+export const cN = `
 --------
 -0----0-
 -00---0-
@@ -441,8 +432,7 @@ const cN = `
 -0---00-
 -0----0-
 `
-
-const cr = `
+export const cr = `
 --------
 --------
 --------
@@ -452,8 +442,7 @@ const cr = `
 --0-----
 --------
 `
-
-const cR = `
+export const cR = `
 --------
 -00000--
 -0----0-
@@ -463,19 +452,17 @@ const cR = `
 -0----0-
 -0----0-
 `
-
-const cQuestion = `
+export const cQuestion = `
 --------
 ---00---
 --0--00-
-----000-
+----00--
 ---0----
 --------
 ---0----
 --------
 `
-
-const cAt = `
+export const cAt = `
 --------
 --0000--
 -0----0-
@@ -485,8 +472,7 @@ const cAt = `
 ---00---
 --------
 `
-
-const cBlock = `
+export const cBlock = `
 0000000-
 0000000-
 0000000-
@@ -496,118 +482,13 @@ const cBlock = `
 0000000-
 --------
 `
-
-export const testBitmap: Bitmap = {
-    size: {width: 80, height: 8},
-    data: dataToArray(assembleChars([cBackspace, cDot, cColon, cPlus, cc, cg, cC, cH, cB, cBlock]), 8*8*10*4)
-}
-
-/**
- * Used to dynamically retrieve a character for bitmap assembly
- */
-export class BitmapAssembler {
-    private cBackspace = cBackspace;
-    private cDot = cDot;
-    // private cComma = cComma;
-    private cMinus = cMinus;
-    private cPlus = cPlus;
-    private cColon = cColon;
-    private cSemicolon = cSemicolon;
-    private cBlock = cBlock;
-    private cAt = cAt;
-    private cQuestion = cQuestion;
-
-    private ca = ca;
-    private cA = cA;
-    private cb = cb;
-    private cB = cB;
-    private cc = cc;
-    private cC = cC;
-    private cd = cd;
-    private cD = cD;
-    private ce = ce;
-    private cE = cE;
-    private cf = cf;
-    private cF = cF;
-    private cg = cg;
-    // private cG = cG;
-    private ch = ch;
-    private cH = cH;
-    private ci = ci;
-    private cI = cI;
-    // private cj = cj;
-    // private cJ = cJ;
-    private ck = ck;
-    private cK = cK;
-    private cn = cn;
-    private cN = cN;
-    private cr = cr;
-    private cR = cR;
-
-    // return character bitmap string
-    public getChar(suffix: string): string {
-
-        // sanitize special characters
-        switch(suffix) {
-            case " ":
-                suffix = "Backspace";
-                break;
-            case ".":
-                suffix = "Dot";
-                break;
-            case ",":
-                suffix = "Comma";
-                break;
-            case ":":
-                suffix = "Colon";
-                break;
-            case ";":
-                suffix = "Semicolon";
-                break;
-            case "+":
-                suffix = "Plus";
-                break;
-            case "-":
-                suffix = "Minus";
-                break;
-            case "*":
-                suffix = "Block";
-                break;
-            case "@":
-                suffix = "At";
-                break;
-            case "?":
-                suffix = "Question";
-                break;
-
-        }
-        const char = this["c" + suffix];
-        return char;
-    }
-
-    public createBitmap(string: string): Bitmap {
-        const chars = [];
-
-        // add bitmap characters corresponding to input to chars[]
-        for(let i = 0; i < string.length; i++) {
-            const currCharFromString = string[i];
-            chars.push(this.getChar(currCharFromString));
-        }
-
-        const width = 8*string.length;
-        
-        // creates a bitmap with a dynamic width
-        const bitmap: Bitmap = {
-            size: {width, height: 8},
-            data: dataToArray(assembleChars(chars), 8*8*width*4),
-        };
-        return bitmap;
-    }
-}
-
-export const hinrikBitmap: Bitmap = {
-    size: {width: 80, height: 8},
-    data: dataToArray(assembleChars([cBackspace, cDot, ci, cr, cn, ch, ck, cH, cN, cK]), 8*8*10*4)
-}
-
-new BitmapAssembler().createBitmap("ab")
+export const cHalfFull = `
+0000----
+0000----
+0000----
+0000----
+----0000
+----0000
+----0000
+----0000
+`

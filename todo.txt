@@ -18,7 +18,7 @@ bugs and low priority stuff:
 - re-evalute RenderDescriptor.
 - CRT filter sometimes has weird artefacts on ImgTextures. Have no idea why
 - config should not be initialized before a shader is applied. Currently it is created whenever a shader object is instantiatied
-- Improve ASCII character brightness calculations, OR find a way to quantize proportionally to the brightness of the bitmap characters
+- dynamic ASCII quantization relative to character brightness
 
 
 things that would be nice to have:

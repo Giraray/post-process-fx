@@ -1,3 +1,6 @@
+10 - 07.07.25
+- Dynamic ASCII bitmap sets are now ready! Cleaned up lots of code.
+
 9 - 21.06.25
 - Moved brightness and contrast from ASCII shader to Img texture.
 

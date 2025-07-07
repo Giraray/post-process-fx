@@ -58,8 +58,8 @@ export class PerlinTexture extends TextureObject {
             id: 'gridSize',
             title: 'Texture size',
             
-            default: 3,
-            value: 3,
+            default: 18,
+            value: 18,
 
             step: 0.1,
 
@@ -70,8 +70,8 @@ export class PerlinTexture extends TextureObject {
             label: 'Style',
             id: 'style',
             type: 'enum',
-            default: 'natural',
-            value: 'natural',
+            default: 'normalized',
+            value: 'normalized',
             title: 'Noise style',
             options: [
                 {label: 'Natural', id: 'natural'},
@@ -172,85 +172,9 @@ export class PerlinTexture extends TextureObject {
             code: perlinCode
         });
 
-        // PIPELINE
-        const bindGroupLayout = device.createBindGroupLayout({
-            entries: <Iterable<GPUBindGroupLayoutEntry>>[
-                {
-                    binding: 0,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    buffer: {
-                        type: 'uniform',
-                    },
-                },
-                {
-                    binding: 1,
-                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
-                    buffer: {
-                        type: 'uniform',
-                    },
-                },
-                {
-                    binding: 2,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    buffer: {
-                        type: 'uniform',
-                    },
-                },
-                {
-                    binding: 3,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    buffer: {
-                        type: 'uniform',
-                    },
-                },
-                {
-                    binding: 4,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    buffer: {
-                        type: 'uniform',
-                    },
-                },
-                {
-                    binding: 5,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    buffer: {
-                        type: 'uniform',
-                    },
-                },
-                {
-                    binding: 6,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    buffer: {
-                        type: 'uniform',
-                    },
-                },
-                {
-                    binding: 7,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    buffer: {
-                        type: 'uniform',
-                    },
-                },
-                {
-                    binding: 8,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    buffer: {
-                        type: 'uniform',
-                    },
-                },
-                {
-                    binding: 9,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    buffer: {
-                        type: 'uniform',
-                    },
-                },
-            ]
-        });
-
         this.pipeline = device.createRenderPipeline({
             label: 'perlin texture pipeline',
-            layout: device.createPipelineLayout({bindGroupLayouts:[bindGroupLayout]}),
+            layout: 'auto',
             vertex: {
                 module: shaderModule,
             },
@@ -265,11 +189,9 @@ export class PerlinTexture extends TextureObject {
         const style = this.findIndex('style')
         const gridSize = this.findIndex('gridSize');
         const fractals = this.findIndex('fractals');
-        const animate = this.findIndex('animate');
         const speed = this.findIndex('speed');
         const negColor = this.findIndex('negColor');
         const posColor = this.findIndex('posColor');
-        const fps = this.findIndex('fps');
         const config = this.config;
 
         // style options
@@ -302,7 +224,8 @@ export class PerlinTexture extends TextureObject {
 
         // seed
         const seedBuffer = device.createBuffer({size: 4,usage: usage});
-        device.queue.writeBuffer(seedBuffer, 0, new Float32Array([this.seed]));
+        device.queue.writeBuffer(seedBuffer, 0, new Float32Array([100]));
+        // device.queue.writeBuffer(seedBuffer, 0, new Float32Array([this.seed]));
 
         // normal configs
         const gridBuffer = this.numberBuffer(4, this.config[gridSize]);
@@ -322,48 +245,18 @@ export class PerlinTexture extends TextureObject {
 
         this.bindGroup = device.createBindGroup({
             label: 'perlin bindgroup',
-            layout: bindGroupLayout,
+            layout: this.pipeline.getBindGroupLayout(0),
             entries: [
-                {
-                    binding: 0,
-                    resource: {buffer: styleBuffer},
-                },
-                {
-                    binding: 1,
-                    resource: {buffer: resBuffer}
-                },
-                {
-                    binding: 2,
-                    resource: {buffer: seedBuffer}
-                },
-                {
-                    binding: 3,
-                    resource: {buffer: gridBuffer}
-                },
-                {
-                    binding: 4,
-                    resource: {buffer: intensityBuffer}
-                },
-                {
-                    binding: 5,
-                    resource: {buffer: timeBuffer}
-                },
-                {
-                    binding: 6,
-                    resource: {buffer: speedBuffer}
-                },
-                {
-                    binding: 7,
-                    resource: {buffer: fractalsBuffer}
-                },
-                {
-                    binding: 8,
-                    resource: {buffer: posColorBuffer}
-                },
-                {
-                    binding: 9,
-                    resource: {buffer: negColorBuffer}
-                },
+                {binding: 0,resource: {buffer: styleBuffer}},
+                {binding: 1,resource: {buffer: resBuffer}},
+                {binding: 2,resource: {buffer: seedBuffer}},
+                {binding: 3,resource: {buffer: gridBuffer}},
+                {binding: 4,resource: {buffer: intensityBuffer}},
+                {binding: 5,resource: {buffer: timeBuffer}},
+                {binding: 6,resource: {buffer: speedBuffer}},
+                {binding: 7,resource: {buffer: fractalsBuffer}},
+                {binding: 8,resource: {buffer: posColorBuffer}},
+                {binding: 9,resource: {buffer: negColorBuffer}},
             ],
         });
     }

@@ -1,7 +1,6 @@
 // images
-import imgPath from './assets/mrcleanblehhhhhh.png';
 import defaultImg from './assets/thumbnails/eliasTN.png';
-import circleImg from './assets/Red-Circle-PNG-Images-HD.png';
+import circleImg from './assets/test-circle.png';
 
 // textures
 import {TextureObject} from './shaderClasses/textureObject.ts'
@@ -150,7 +149,7 @@ defaultImgSelect.addEventListener('click', function() {
 
 // perlin texture
 perlinSelect.addEventListener('click', function() {
-    const customSize = {width: 800, height: 800*Math.sqrt(2)}
+    const customSize = {width: 700, height: 700}
     const newTexture = new PerlinTexture(device, canvasFormat, context, customSize);
     initTexture(newTexture);
 });
@@ -192,12 +191,13 @@ dogSelect.addEventListener('click', function() {
     initShader(newShader);
 })
 
+// initTexture(new PerlinTexture(device, canvasFormat, context, {width: 700, height: 700}));
 initTexture(createImgTexture(source));
 
 // add default shaders for testing here vvvvvvv
 const celShader = new CelShader(device, canvasFormat);
 const asciiShader = new AsciiShader(device, canvasFormat);
-initShader(asciiShader);
+// initShader(asciiShader);
 // remove
 
 // SAVE IMAGE
